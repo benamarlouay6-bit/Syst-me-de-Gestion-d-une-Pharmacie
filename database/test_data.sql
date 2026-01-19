@@ -38,10 +38,10 @@ PreparedStatement psVente = cnx.prepareStatement(sqlVente);
 
 // remplissage des ?
 psVente.setDate(1, dateVente); // 👈 LA DATE
-psVente.setInt(2, 3);        // quantite
-psVente.setDouble(3, 14.70); // montantTotal
-psVente.setInt(4, 2);        // idClient
-psVente.setInt(5, 5);        // idProduit
+psVente.setInt(2, quantite);        // quantite
+psVente.setDouble(3,  montantTotal); // montantTotal
+psVente.setInt(4, idClient);        // idClient
+psVente.setInt(5, idProduit);        // idProduit
 
 psVente.executeUpdate();)
 
