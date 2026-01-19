@@ -52,27 +52,129 @@ psVente.setInt(5, idProduit);        // idProduit
 
 psVente.executeUpdate();)
 
---lorsque un client achete un produit
-INSERT INTO vente (dateVente, quantite, montantTotal, idClient, idProduit)
+-- ajouter employe
+INSERT INTO employe (nom)
+VALUES (?);
+
+-- liste des employe
+SELECT * FROM employe;
+
+-- ajouter administrateur
+INSERT INTO administrateur (nom)
+VALUES (?);
+
+-- liste des administrateur
+SELECT * FROM administrateur;
+
+
+-- ajouter prouduit
+INSERT INTO produit (nom, prixF, prix, quantiteStock, seuilAlerte)
 VALUES (?, ?, ?, ?, ?);
 
---on diminue la quantite du produit
+-- Consulter tous les produits
+SELECT * FROM produit;
+
+-- Modifier un produit
 UPDATE produit
-SET quantiteStock = quantiteStock - ?
+SET nom = ?, prixF = ?, prix = ?, seuilAlerte = ?
 WHERE idProduit = ?;
 
---lorsque le pharmacie passe une commande 
+-- Supprimer un produit
+DELETE FROM produit
+WHERE idProduit = ?;
+
+-- Produits en alerte de stock
+SELECT *
+FROM produit
+WHERE quantiteStock <= seuilAlerte;
+
+
+-- ajouter fournisseur
+INSERT INTO fournisseur(nom,telephone,mail)
+VALUES(?,?,?);
+
+-- Liste des fournisseurs
+SELECT * FROM fournisseur;
+
+-- ajouter client
+INSERT INTO client(nom,telephone,cin)
+VALUES(?,?,?);
+
+-- liste des clients
+SELECT * FROM client;
+
+-- Créer une commande fournisseur
 INSERT INTO commandeFournisseur
 (dateCommande, dateReception, quantite, montantTotal, etat, idFournisseur, idProduit)
 VALUES (?, ?, ?, ?, ?, ?, ?);
 
--- lorsque commande est reçue
+-- Modifier une commande fournisseur
+UPDATE commandeFournisseur
+SET quantite = ?, montantTotal = ?
+WHERE idCommande = ?;
+
+-- Annuler une commande fournisseur
+DELETE FROM commandefournisseur WHERE idCommande=?;
+
+
+-- reception d'une commande
 UPDATE commandeFournisseur
 SET dateReception = ?, etat = 'RECUE'
 WHERE idCommande = ?;
 
-
--- augmentation de stock de produit
+-- augmentation de stock
 UPDATE produit
 SET quantiteStock = quantiteStock + ?
 WHERE idProduit = ?;
+
+
+
+
+-- enregistrerVente
+INSERT INTO vente (dateVente, quantite, montantTotal, idClient, idProduit)
+VALUES (?, ?, ?, ?, ?);
+
+-- diminuer la quantite de stock
+UPDATE produit
+SET quantiteStock = quantiteStock - ?
+WHERE idProduit = ?;
+
+-- liste  de vente
+SELECT * FROM vente;
+
+-- HISTORIQUE DES ACHATS CLIENT(chaque client les produit qu'il les a acheté)
+SELECT c.nom , p.nom, v.quantite,v.montantTotal
+FROM vente v,client c,produit p
+WHERE v.idProduit =p.idProduit 
+AND v.idClient=c.idClient;
+
+-- HISTORIQUE DES ACHATS ENTRE DEUX DATES
+SELECT c.nom,p.nom ,v.quantite,v.montantTotal
+FROM vente v
+JOIN client c ON v.idClient = c.idClient
+JOIN produit p ON v.idProduit = p.idProduit
+WHERE v.dateVente BETWEEN ? AND ?
+ORDER BY v.dateVente;
+
+
+-- RAPPORTS D’ANALYSE:
+
+-- État des stocks
+SELECT idProduit, nom, quantiteStock, seuilAlerte
+FROM produit;
+
+
+-- Chiffre d’affaires par période
+SELECT SUM(v.montantTotal)-SUM(c.montantTotal) AS chiffreAffaires
+FROM vente v,commandefournisseur c
+WHERE c.etat='RECUE'
+AND v.dateReception BETWEEN ? AND ?
+AND v.dateVente BETWEEN ? AND ?;
+
+
+-- Performance des fournisseurs
+ -- Montant total commandé par fournisseur
+SELECT f.nom, SUM(c.montantTotal) AS totalCommandes
+FROM commandeFournisseur c
+JOIN fournisseur f ON c.idFournisseur = f.id
+GROUP BY f.nom;
