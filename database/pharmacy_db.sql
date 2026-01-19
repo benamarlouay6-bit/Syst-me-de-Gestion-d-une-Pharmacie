@@ -1,4 +1,16 @@
 use pharmacie;
+
+CREATE TABLE employe (
+    idEmploye INT AUTO_INCREMENT PRIMARY KEY,
+    nom VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE administrateur (
+    idAdministrateur INT AUTO_INCREMENT PRIMARY KEY,
+    nom VARCHAR(100) NOT NULL
+);
+
+
 CREATE TABLE produit (
     idProduit INT AUTO_INCREMENT PRIMARY KEY,
     nom VARCHAR(100) NOT NULL,

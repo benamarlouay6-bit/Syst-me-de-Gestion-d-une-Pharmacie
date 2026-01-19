@@ -1,3 +1,10 @@
+INSERT INTO employe (nom)
+VALUES (?);
+
+INSERT INTO administrateur (nom)
+VALUES (?);
+
+
 INSERT INTO produit (nom,prixF,prixC,quantiteStock,seuilAlerte)
 VALUES
 ('Doliprane 500mg',2.20,3.50,120, 20),
