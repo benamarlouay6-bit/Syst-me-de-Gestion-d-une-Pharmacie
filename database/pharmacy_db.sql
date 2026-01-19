@@ -23,3 +23,36 @@ CREATE TABLE client (
     cin VARCHAR(20)
 );
 
+CREATE TABLE commandeFournisseur (
+    idCommande INT AUTO_INCREMENT PRIMARY KEY,
+    dateCommande DATE NOT NULL,
+    dateReception DATE,
+    quantite INT NOT NULL,
+    montantTotal DOUBLE NOT NULL,
+    etat VARCHAR(30) NOT NULL
+        CHECK (etat IN ('EN_COURS', 'RECUE', 'ANNULEE')),
+    idFournisseur INT NOT NULL,
+    idProduit INT NOT NULL,
+
+    CONSTRAINT fk_commande_fournisseur
+        FOREIGN KEY (idFournisseur) REFERENCES fournisseur(id),
+
+    CONSTRAINT fk_commande_produit
+        FOREIGN KEY (idProduit) REFERENCES produit(idProduit)
+);
+
+
+CREATE TABLE vente (
+    idVente INT AUTO_INCREMENT PRIMARY KEY,
+    dateVente DATE NOT NULL,
+    quantite INT NOT NULL,
+    montantTotal DOUBLE NOT NULL,
+    idClient INT NOT NULL,
+    idProduit INT NOT NULL,
+
+    CONSTRAINT fk_vente_client
+        FOREIGN KEY (idClient) REFERENCES client(idClient),
+
+    CONSTRAINT fk_vente_produit
+        FOREIGN KEY (idProduit) REFERENCES produit(idProduit)
+);

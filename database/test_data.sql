@@ -27,3 +27,45 @@ VALUES
 ('Clinique El Amen', '71345678', NULL),
 ('Clinique Les Jasmins', '71788990', NULL),
 ('Clinique Ibn Sina', '71999888', NULL);
+
+
+exemple pour louay fil java
+(String sqlVente =
+    "INSERT INTO vente (dateVente, quantite, montantTotal, idClient, idProduit) " +
+    "VALUES (?, ?, ?, ?, ?)";
+
+PreparedStatement psVente = cnx.prepareStatement(sqlVente);
+
+// remplissage des ?
+psVente.setDate(1, dateVente); // 👈 LA DATE
+psVente.setInt(2, 3);        // quantite
+psVente.setDouble(3, 14.70); // montantTotal
+psVente.setInt(4, 2);        // idClient
+psVente.setInt(5, 5);        // idProduit
+
+psVente.executeUpdate();)
+
+--lorsque un client achete un produit
+INSERT INTO vente (dateVente, quantite, montantTotal, idClient, idProduit)
+VALUES (?, ?, ?, ?, ?);
+
+--on diminue la quantite du produit
+UPDATE produit
+SET quantiteStock = quantiteStock - ?
+WHERE idProduit = ?;
+
+--lorsque le pharmacie passe une commande 
+INSERT INTO commandeFournisseur
+(dateCommande, dateReception, quantite, montantTotal, etat, idFournisseur, idProduit)
+VALUES (?, ?, ?, ?, ?, ?, ?);
+
+-- lorsque commande est reçue
+UPDATE commandeFournisseur
+SET dateReception = ?, etat = 'RECUE'
+WHERE idCommande = ?;
+
+
+-- augmentation de stock de produit
+UPDATE produit
+SET quantiteStock = quantiteStock + ?
+WHERE idProduit = ?;
