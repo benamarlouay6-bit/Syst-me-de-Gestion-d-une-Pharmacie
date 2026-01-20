@@ -1,0 +1,18 @@
+package ui.utils;
+
+public class Session {
+
+    private static String role; // "ADMIN" ou "EMPLOYE"
+
+    public static void setRole(String userRole) {
+        role = userRole;
+    }
+
+    public static String getRole() {
+        return role;
+    }
+
+    public static boolean isAdmin() {
+        return "ADMIN".equals(role);
+    }
+}
