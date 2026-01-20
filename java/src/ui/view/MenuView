@@ -1,0 +1,74 @@
+package ui.view;
+
+import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
+import ui.utils.Session;
+
+public class MenuView {
+
+    public void start(Stage stage) {
+
+        // 🔹 TITRE
+        Label title = new Label("Menu Principal");
+        title.getStyleClass().add("title");
+
+        // 🔹 ROLE UTILISATEUR
+        Label roleLabel = new Label(
+                "Connecté en tant que : " + Session.getRole()
+        );
+
+        // 🔹 BOUTONS
+        Button btnProducts = new Button("Produits");
+        Button btnSuppliers = new Button("Fournisseurs");
+        Button btnSales = new Button("Ventes");
+        Button btnReports = new Button("Rapports");
+        Button btnLogout = new Button("Déconnexion");
+
+        // 🔹 ACTIONS
+        btnProducts.setOnAction(e -> new ProductView().start(stage));
+        btnSuppliers.setOnAction(e -> new SupplierView().start(stage));
+        btnSales.setOnAction(e -> new SaleView().start(stage));
+
+        // 🔐 ACCÈS ADMIN UNIQUEMENT
+        btnReports.setOnAction(e -> {
+            if (Session.isAdmin()) {
+                new ReportView().start(stage);
+            } else {
+                new Alert(Alert.AlertType.ERROR,
+                        "Accès réservé à l'administrateur").show();
+            }
+        });
+
+        btnLogout.setOnAction(e -> new LoginView().start(stage));
+
+        // 🔹 MASQUER RAPPORTS POUR EMPLOYÉS (OPTION PRO)
+        if (!Session.isAdmin()) {
+            btnReports.setVisible(false);
+        }
+
+        // 🔹 LAYOUT
+        VBox root = new VBox(15);
+        root.getChildren().addAll(
+                title,
+                roleLabel,
+                btnProducts,
+                btnSuppliers,
+                btnSales,
+                btnReports,
+                btnLogout
+        );
+        root.getStyleClass().add("container");
+
+        // 🔹 SCENE
+        Scene scene = new Scene(root, 400, 350);
+        scene.getStylesheets().add("/css/style.css");
+
+        stage.setScene(scene);
+        stage.setTitle("Menu");
+        stage.show();
+    }
+}
