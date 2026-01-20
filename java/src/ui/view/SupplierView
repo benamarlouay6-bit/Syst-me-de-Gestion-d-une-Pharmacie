@@ -1,0 +1,30 @@
+package ui.view;
+
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
+
+public class SupplierView {
+
+    public void start(Stage stage) {
+
+        Label title = new Label("Fournisseurs");
+        title.getStyleClass().add("title");
+
+        ListView<String> list = new ListView<>();
+
+        Button btnBack = new Button("Retour");
+        btnBack.setOnAction(e -> new MenuView().start(stage));
+
+        VBox root = new VBox(15, title, list, btnBack);
+        root.getStyleClass().add("container");
+
+        Scene scene = new Scene(root, 500, 350);
+        scene.getStylesheets().add("/css/style.css");
+
+        stage.setScene(scene);
+        stage.setTitle("Fournisseurs");
+        stage.show();
+    }
+}
