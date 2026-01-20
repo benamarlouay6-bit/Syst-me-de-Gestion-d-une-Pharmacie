@@ -1,0 +1,59 @@
+package ui.view;
+
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
+
+public class ProductView {
+
+    public void start(Stage stage) {
+
+        // 🔹 TITRE
+        Label title = new Label("Gestion des Produits");
+        title.getStyleClass().add("title");
+
+        // 🔹 BOUTONS (UI SEULE)
+        Button btnAdd = new Button("Ajouter un produit");
+        Button btnEdit = new Button("Modifier un produit");
+        Button btnDelete = new Button("Supprimer un produit");
+        Button btnBack = new Button("Retour au menu");
+
+        // 🔹 ACTIONS (TEMPORAIRES)
+        btnAdd.setOnAction(e ->
+                System.out.println("Ajouter produit (à implémenter)")
+        );
+
+        btnEdit.setOnAction(e ->
+                System.out.println("Modifier produit (à implémenter)")
+        );
+
+        btnDelete.setOnAction(e ->
+                System.out.println("Supprimer produit (à implémenter)")
+        );
+
+        btnBack.setOnAction(e ->
+                new MenuView().start(stage)
+        );
+
+        // 🔹 LAYOUT
+        VBox root = new VBox(20);
+        root.getChildren().addAll(
+                title,
+                btnAdd,
+                btnEdit,
+                btnDelete,
+                btnBack
+        );
+        root.getStyleClass().add("container");
+
+        // 🔹 SCENE
+        Scene scene = new Scene(root, 400, 350);
+        scene.getStylesheets().add("/css/style.css");
+
+        stage.setScene(scene);
+        stage.setTitle("Produits");
+        stage.show();
+    }
+}
