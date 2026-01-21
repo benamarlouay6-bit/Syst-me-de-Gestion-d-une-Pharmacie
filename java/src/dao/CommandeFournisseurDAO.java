@@ -5,6 +5,7 @@ import util.DatabaseConnection;
 import exceptions.FournisseurNotFoundException;
 import exceptions.MedicamentNotFoundException;
 import exceptions.AnnulationCommandeImpossibleException;
+import exceptions.ReceptionCommandeImpossibleException;
 
 import java.sql.*;
 
@@ -156,7 +157,91 @@ public void annulerCommande(int idCommande)
 }
 
 
-    
+  
+
+
+
+
+public void receptionCommande(int idCommande)
+        throws ReceptionCommandeImpossibleException {
+
+    String sqlGetCommande =
+        "SELECT nomMedicament, quantite, etat " +
+        "FROM commandefournisseur WHERE idCommande = ?";
+
+    String sqlUpdateEtat =
+        "UPDATE commandefournisseur SET etat = 'REÇUE' WHERE idCommande = ?";
+
+    String sqlUpdateStock =
+        "UPDATE produit SET quantiteStock = quantiteStock + ? " +
+        "WHERE nomMedicament = ?";
+
+    try (Connection con = DatabaseConnection.getConnection()) {
+
+        con.setAutoCommit(false); // 🔒 transaction
+
+        try {
+
+            String nomMedicament;
+            int quantite;
+            String etat;
+
+            // 1️⃣ Récupérer la commande
+            try (PreparedStatement psCmd = con.prepareStatement(sqlGetCommande)) {
+                psCmd.setInt(1, idCommande);
+                ResultSet rs = psCmd.executeQuery();
+
+                if (!rs.next()) {
+                    throw new ReceptionCommandeImpossibleException(
+                        "Commande introuvable (id=" + idCommande + ")"
+                    );
+                }
+
+                nomMedicament = rs.getString("nomMedicament");
+                quantite = rs.getInt("quantite");
+                etat = rs.getString("etat");
+            }
+
+            // 2️⃣ Vérifier règles métier
+            if ("ANNULÉE".equalsIgnoreCase(etat)) {
+                throw new ReceptionCommandeImpossibleException(
+                    "Réception impossible : la commande est annulée."
+                );
+            }
+
+            if ("REÇUE".equalsIgnoreCase(etat)) {
+                throw new ReceptionCommandeImpossibleException(
+                    "Réception impossible : la commande est déjà reçue."
+                );
+            }
+
+            // 3️⃣ Mise à jour du stock (SI le produit existe → sinon rien)
+            try (PreparedStatement psStock = con.prepareStatement(sqlUpdateStock)) {
+                psStock.setInt(1, quantite);
+                psStock.setString(2, nomMedicament);
+                psStock.executeUpdate(); // ← aucune vérification, aucune exception
+            }
+
+            // 4️⃣ Mise à jour de l’état de la commande
+            try (PreparedStatement psEtat = con.prepareStatement(sqlUpdateEtat)) {
+                psEtat.setInt(1, idCommande);
+                psEtat.executeUpdate();
+            }
+
+            con.commit();
+            System.out.println("✅ Commande reçue. Stock mis à jour si le produit existe.");
+
+        } catch (Exception e) {
+            con.rollback(); // ❌ annuler si erreur
+            throw e;
+        }
+
+    } catch (SQLException e) {
+        e.printStackTrace();
+    }
+}
+
+  
    
    
 
@@ -166,73 +251,9 @@ public void annulerCommande(int idCommande)
 
    
 
-    public void annulerCommande(int idCommande) {
-        String sql = "UPDATE commandefournisseur SET etat = 'ANNULÉE' WHERE idCommande = ?";
+   
 
-        try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-
-            ps.setInt(1, idCommande);
-            ps.executeUpdate();
-
-            System.out.println("Commande fournisseur annulée.");
-
-        } catch (SQLException e) {
-            System.err.println("Erreur lors de l'annulation");
-            e.printStackTrace();
-        }
-    }
-
-    public void receptionnerCommande(int idCommande) {
-
-        String getCommande = "SELECT idProduit, quantite FROM commande_fournisseur WHERE idCommande = ?";
-        String updateStock = "UPDATE produit SET quantiteStock = quantiteStock + ? WHERE id = ?";
-        String updateCommande = "UPDATE commandefournisseur SET etat = 'REÇUE', dateReception = ? WHERE idCommande = ?";
-
-        try (Connection con = DatabaseConnection.getConnection()) {
-
-            con.setAutoCommit(false); // start transaction
-
-            int idProduit = 0;
-            int quantite = 0;
-
-            // 1️⃣ Récupérer la commande
-            try (PreparedStatement psGet = con.prepareStatement(getCommande)) {
-                psGet.setInt(1, idCommande);
-                ResultSet rs = psGet.executeQuery();
-
-                if (rs.next()) {
-                    idProduit = rs.getInt("idProduit");
-                    quantite = rs.getInt("quantite");
-                } else {
-                    System.out.println("Commande introuvable.");
-                    return;
-                }
-            }
-
-            // 2️⃣ Mettre à jour le stock
-            try (PreparedStatement psStock = con.prepareStatement(updateStock)) {
-                psStock.setInt(1, quantite);
-                psStock.setInt(2, idProduit);
-                psStock.executeUpdate();
-            }
-
-            // 3️⃣ Mettre à jour la commande
-            try (PreparedStatement psCmd = con.prepareStatement(updateCommande)) {
-                psCmd.setDate(1, new Date(System.currentTimeMillis()));
-                psCmd.setInt(2, idCommande);
-                psCmd.executeUpdate();
-            }
-
-            con.commit(); // success
-
-            System.out.println("Commande reçue et stock mis à jour avec succès !");
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
+    
 
     
             
