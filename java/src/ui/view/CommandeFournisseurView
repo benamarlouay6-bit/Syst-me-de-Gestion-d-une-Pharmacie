@@ -1,0 +1,88 @@
+package ui.view;
+
+import dao.CommandeFournisseurDAO;
+import exception.FournisseurNotFoundException;
+import exception.MedicamentNotFoundException;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
+import model.CommandeFournisseur;
+
+import java.sql.Date;
+import java.time.LocalDate;
+
+public class CommandeFournisseurView {
+
+    private final CommandeFournisseurDAO dao = new CommandeFournisseurDAO();
+
+    public void start(Stage stage) {
+    	Button btnList = new Button("Liste des commandes fournisseur");
+        Button btnCreate = new Button("Passer commande fournisseur");
+        Button btnBack = new Button("Retour");
+
+        btnCreate.setOnAction(e -> showCreateDialog());
+        btnBack.setOnAction(e -> new FournisseurView().start(stage));
+        btnList.setOnAction(e ->
+        new ListeCommandeFournisseurView().start(stage));
+        
+        VBox root = new VBox(15, btnCreate, btnBack,btnList);
+        root.setStyle("-fx-padding: 20");
+
+        stage.setScene(new Scene(root, 400, 250));
+        stage.setTitle("Commande Fournisseur");
+        stage.show();
+    }
+
+    private void showCreateDialog() {
+
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("Nouvelle commande fournisseur");
+
+        TextField txtIdFournisseur = new TextField();
+        TextField txtMedicament = new TextField();
+        TextField txtQuantite = new TextField();
+
+        GridPane grid = new GridPane();
+        grid.setVgap(10);
+        grid.setHgap(10);
+
+        grid.addRow(0, new Label("ID Fournisseur"), txtIdFournisseur);
+        grid.addRow(1, new Label("Nom Médicament"), txtMedicament);
+        grid.addRow(2, new Label("Quantité"), txtQuantite);
+
+        dialog.getDialogPane().setContent(grid);
+        dialog.getDialogPane().getButtonTypes()
+                .addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        dialog.setResultConverter(btn -> {
+            if (btn == ButtonType.OK) {
+                try {
+                    CommandeFournisseur c = new CommandeFournisseur(
+                            Date.valueOf(LocalDate.now()),
+                            Integer.parseInt(txtQuantite.getText()),
+                            Integer.parseInt(txtIdFournisseur.getText()),
+                            txtMedicament.getText()
+                    );
+                    dao.creerCommande(c);
+                    showAlert("Succès", "Commande créée avec succès");
+                } catch (FournisseurNotFoundException | MedicamentNotFoundException ex) {
+                    showAlert("Erreur", ex.getMessage());
+                } catch (Exception ex) {
+                    showAlert("Erreur", "Données invalides");
+                }
+            }
+            return null;
+        });
+
+        dialog.showAndWait();
+    }
+
+    private void showAlert(String title, String msg) {
+        Alert a = new Alert(Alert.AlertType.INFORMATION);
+        a.setTitle(title);
+        a.setContentText(msg);
+        a.showAndWait();
+    }
+}
