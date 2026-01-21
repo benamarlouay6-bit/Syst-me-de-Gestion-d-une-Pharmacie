@@ -17,7 +17,7 @@ public void creerCommande(CommandeFournisseur c)
         throws FournisseurNotFoundException, MedicamentNotFoundException {
 
     String sqlCheckFournisseur =
-        "SELECT idFournisseur FROM fournisseur WHERE idFournisseur = ?";
+        "SELECT id FROM fournisseur WHERE id = ?";
 
     String sqlCheckMedicament =
         "SELECT fm.prixFournisseur " +
@@ -166,7 +166,7 @@ public void receptionCommande(int idCommande)
         throws ReceptionCommandeImpossibleException {
 
     String sqlGetCommande =
-        "SELECT nomMedicament, quantite, etat " +
+        "SELECT nom, quantite, etat " +
         "FROM commandefournisseur WHERE idCommande = ?";
 
     String sqlUpdateEtat =
