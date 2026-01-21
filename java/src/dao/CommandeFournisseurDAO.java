@@ -7,29 +7,82 @@ import java.sql.*;
 
 public class CommandeFournisseurDAO {
 
-    public void creerCommande(CommandeFournisseur c) {
-        String sql = "INSERT INTO commandefournisseur " +
-                     "(dateCommande, quantite, montantTotal, etat, idFournisseur, idProduit) " +
-                     "VALUES (?, ?, ?, ?, ?, ?)";
 
-        try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+    private double getPrixFournisseur(int idProduit, int idFournisseur, Connection con)
+        throws SQLException, FournisseurNotFoundException {
 
-            ps.setDate(1, c.getDateCommande());
-            ps.setInt(2, c.getQuantite());
-            ps.setDouble(3, c.getMontantTotal());
-            ps.setString(4, c.getEtat());
-            ps.setInt(5, c.getIdFournisseur());
-            ps.setInt(6, c.getIdProduit());
+    String sql = "SELECT prix_fournisseur FROM produit WHERE idProduit = ? AND idFournisseur = ?";
 
-            ps.executeUpdate();
-            System.out.println("Commande fournisseur créée avec succès !");
+    try (PreparedStatement ps = con.prepareStatement(sql)) {
+        ps.setInt(1, idProduit);
+        ps.setInt(2, idFournisseur);
 
-        } catch (SQLException e) {
-            System.err.println("Erreur lors de la création de la commande");
-            e.printStackTrace();
+        try (ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                return rs.getDouble("prix_fournisseur");
+            }
         }
     }
+
+    throw new FournisseurNotFoundException(
+        "Aucun fournisseur trouvé (idFournisseur=" + idFournisseur +
+        ") pour le produit idProduit=" + idProduit
+    );
+}
+
+   import exceptions.FournisseurNotFoundException;
+import java.sql.*;
+
+public void creerCommande(CommandeFournisseur c)
+        throws FournisseurNotFoundException {
+
+    String insertCommande = "INSERT INTO commandefournisseur " +
+        "(dateCommande, quantite, montantTotal, etat, idFournisseur, idProduit) " +
+        "VALUES (?, ?, ?, ?, ?, ?)";
+
+    try (Connection con = DatabaseConnection.getConnection()) {
+
+        con.setAutoCommit(false); // 🔒 début transaction
+
+        try {
+
+            
+            double prixFournisseur = getPrixFournisseur(
+                    c.getIdProduit(),
+                    c.getIdFournisseur(),
+                    con
+            );
+
+            
+            double montantTotal = c.getQuantite() * prixFournisseur;
+
+            
+            try (PreparedStatement ps = con.prepareStatement(insertCommande)) {
+
+                ps.setDate(1, c.getDateCommande());
+                ps.setInt(2, c.getQuantite());
+                ps.setDouble(3, montantTotal);
+                ps.setString(4, c.getEtat());
+                ps.setInt(5, c.getIdFournisseur());
+                ps.setInt(6, c.getIdProduit());
+
+                ps.executeUpdate();
+            }
+
+            con.commit(); 
+            System.out.println("Commande fournisseur créée avec succès !");
+
+        } catch (SQLException | FournisseurNotFoundException e) {
+            con.rollback(); 
+            throw e;
+        }
+
+    } catch (SQLException e) {
+        System.err.println("Erreur SQL lors de la création de la commande");
+        e.printStackTrace();
+    }
+}
+
 
     public void modifierCommande(CommandeFournisseur c) {
         String sql = "UPDATE commandefournisseur SET " +
