@@ -1,0 +1,179 @@
+package dao;
+
+import model.CommandeFournisseur;
+import util.DatabaseConnection;
+
+import java.sql.*;
+
+public class CommandeFournisseurDAO {
+
+    public void creerCommande(CommandeFournisseur c) {
+        String sql = "INSERT INTO commande_fournisseur " +
+                     "(dateCommande, quantite, montantTotal, etat, idFournisseur, idProduit) " +
+                     "VALUES (?, ?, ?, ?, ?, ?)";
+
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setDate(1, c.getDateCommande());
+            ps.setInt(2, c.getQuantite());
+            ps.setDouble(3, c.getMontantTotal());
+            ps.setString(4, c.getEtat());
+            ps.setInt(5, c.getIdFournisseur());
+            ps.setInt(6, c.getIdProduit());
+
+            ps.executeUpdate();
+            System.out.println("Commande fournisseur créée avec succès !");
+
+        } catch (SQLException e) {
+            System.err.println("Erreur lors de la création de la commande");
+            e.printStackTrace();
+        }
+    }
+
+    public void modifierCommande(CommandeFournisseur c) {
+        String sql = "UPDATE commande_fournisseur SET " +
+                     "dateCommande = ?, quantite = ?, montantTotal = ?, etat = ?, " +
+                     "idFournisseur = ?, idProduit = ? WHERE idCommande = ?";
+
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setDate(1, c.getDateCommande());
+            ps.setInt(2, c.getQuantite());
+            ps.setDouble(3, c.getMontantTotal());
+            ps.setString(4, c.getEtat());
+            ps.setInt(5, c.getIdFournisseur());
+            ps.setInt(6, c.getIdProduit());
+            ps.setInt(7, c.getIdCommande());
+
+            ps.executeUpdate();
+            System.out.println("Commande fournisseur modifiée avec succès !");
+
+        } catch (SQLException e) {
+            System.err.println("Erreur lors de la modification");
+            e.printStackTrace();
+        }
+    }
+
+    public void annulerCommande(int idCommande) {
+        String sql = "UPDATE commande_fournisseur SET etat = 'ANNULÉE' WHERE idCommande = ?";
+
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setInt(1, idCommande);
+            ps.executeUpdate();
+
+            System.out.println("Commande fournisseur annulée.");
+
+        } catch (SQLException e) {
+            System.err.println("Erreur lors de l'annulation");
+            e.printStackTrace();
+        }
+    }
+
+    public void receptionnerCommande(int idCommande) {
+
+        String getCommande = "SELECT idProduit, quantite FROM commande_fournisseur WHERE idCommande = ?";
+        String updateStock = "UPDATE produit SET quantiteStock = quantiteStock + ? WHERE id = ?";
+        String updateCommande = "UPDATE commande_fournisseur SET etat = 'REÇUE', dateReception = ? WHERE idCommande = ?";
+
+        try (Connection con = DatabaseConnection.getConnection()) {
+
+            con.setAutoCommit(false); // start transaction
+
+            int idProduit = 0;
+            int quantite = 0;
+
+            // 1️⃣ Récupérer la commande
+            try (PreparedStatement psGet = con.prepareStatement(getCommande)) {
+                psGet.setInt(1, idCommande);
+                ResultSet rs = psGet.executeQuery();
+
+                if (rs.next()) {
+                    idProduit = rs.getInt("idProduit");
+                    quantite = rs.getInt("quantite");
+                } else {
+                    System.out.println("Commande introuvable.");
+                    return;
+                }
+            }
+
+            // 2️⃣ Mettre à jour le stock
+            try (PreparedStatement psStock = con.prepareStatement(updateStock)) {
+                psStock.setInt(1, quantite);
+                psStock.setInt(2, idProduit);
+                psStock.executeUpdate();
+            }
+
+            // 3️⃣ Mettre à jour la commande
+            try (PreparedStatement psCmd = con.prepareStatement(updateCommande)) {
+                psCmd.setDate(1, new Date(System.currentTimeMillis()));
+                psCmd.setInt(2, idCommande);
+                psCmd.executeUpdate();
+            }
+
+            con.commit(); // success
+
+            System.out.println("Commande reçue et stock mis à jour avec succès !");
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    public CommandeFournisseur findById(int idCommande) {
+        String sql = "SELECT * FROM commande_fournisseur WHERE idCommande = ?";
+
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setInt(1, idCommande);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return new CommandeFournisseur(
+                    rs.getInt("idCommande"),
+                    rs.getDate("dateCommande"),
+                    rs.getDate("dateReception"),
+                    rs.getInt("quantite"),
+                    rs.getDouble("montantTotal"),
+                    rs.getString("etat"),
+                    rs.getInt("idFournisseur"),
+                    rs.getInt("idProduit")
+                );
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+    
+    
+    public void rapportPerformanceFournisseurs() {
+        String sql = "SELECT idFournisseur, SUM(quantite) AS totalLivree " +
+                     "FROM commande_fournisseur WHERE etat = 'REÇUE' GROUP BY idFournisseur";
+
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            System.out.println("🚚 PERFORMANCE DES FOURNISSEURS :");
+
+            while (rs.next()) {
+                System.out.println(
+                    "Fournisseur ID: " + rs.getInt("idFournisseur") +
+                    " | Quantité livrée: " + rs.getInt("totalLivree")
+                );  // a afficher par eya :)
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+}

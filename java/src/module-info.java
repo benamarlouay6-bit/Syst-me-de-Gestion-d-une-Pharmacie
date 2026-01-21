@@ -4,5 +4,6 @@
 /**
  * 
  */
-module pharmacy {
+module pharmacy {requires
+	java.sql;
 }
