@@ -132,8 +132,23 @@ SELECT * FROM client;
 
 -- Créer une commande fournisseur
 INSERT INTO commandeFournisseur
-(dateCommande, dateReception, quantite, montantTotal, etat, idFournisseur, idProduit)
+(dateCommande, dateReception, quantite, montantTotal, etat, idFournisseur, nom_medicamment)
 VALUES (?, ?, ?, ?, ?, ?, ?);
+
+SELECT id FROM fournisseur WHERE id = ?
+
+ SELECT fm.prixFournisseur 
+        FROM medicament m 
+        JOIN fournisseur_medicament fm ON m.idMedicament = fm.idMedicament 
+        WHERE m.nom = ? AND fm.idFournisseur = ?;
+
+
+SELECT etat FROM commandefournisseur WHERE idCommande = ?;
+
+ SELECT fm.prixFournisseur 
+        FROM medicament m 
+        JOIN fournisseur_medicament fm ON m.idMedicament = fm.idMedicament
+        WHERE m.nom = ? AND fm.idFournisseur = ?;
 
 -- Modifier une commande fournisseur
 UPDATE commandeFournisseur
@@ -145,9 +160,7 @@ UPDATE commande_fournisseur SET etat = 'ANNULÉE' WHERE idCommande = ?;
 
 
 -- reception d'une commande
-UPDATE commandeFournisseur
-SET dateReception = ?, etat = 'RECUE'
-WHERE idCommande = ?;
+UPDATE commandefournisseur SET etat = 'ANNULEE' WHERE idCommande = ?
 
 -- augmentation de stock
 UPDATE produit
