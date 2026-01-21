@@ -1,5 +1,8 @@
-package exceptions;
+package exception;
 
-public class ProduitNotFoundException {
+public class ProduitNotFoundException extends Exception{
+	public ProduitNotFoundException(String message) {
+        super(message);
+    }
 
 }
