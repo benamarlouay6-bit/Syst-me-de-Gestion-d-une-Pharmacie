@@ -16,34 +16,34 @@ public class LoginView extends Application {
     @Override
     public void start(Stage stage) {
 
-        // 🔹 TITRE
+        
         Label title = new Label("Connexion - Pharmacie");
         title.getStyleClass().add("title");
 
-        // 🔹 CHAMPS
+        
         TextField loginField = new TextField();
         loginField.setPromptText("Login");
 
         PasswordField passwordField = new PasswordField();
         passwordField.setPromptText("Mot de passe");
 
-        // 🔹 BOUTON
+        
         Button btnLogin = new Button("Se connecter");
 
-        // 🔹 ACTION LOGIN
+        
         btnLogin.setOnAction(e -> {
 
-            // Vérification du mot de passe (simulation)
+            
             if (passwordField.getText().equals("eyaeya2")) {
 
-                // Définition du rôle
+                
                 if (loginField.getText().equalsIgnoreCase("admin")) {
                     Session.setRole("ADMIN");
                 } else {
                     Session.setRole("EMPLOYE");
                 }
 
-                // Ouvrir le menu principal
+                
                 new MenuView().start(stage);
 
             } else {
@@ -54,7 +54,7 @@ public class LoginView extends Application {
             }
         });
 
-        // 🔹 LAYOUT
+        
         VBox root = new VBox(15);
         root.getChildren().addAll(
                 title,
@@ -64,7 +64,7 @@ public class LoginView extends Application {
         );
         root.getStyleClass().add("container");
 
-        // 🔹 SCENE
+        
         Scene scene = new Scene(root, 350, 250);
         scene.getStylesheets().add("/css/style.css");
 
