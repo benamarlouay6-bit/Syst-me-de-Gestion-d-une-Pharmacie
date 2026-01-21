@@ -4,6 +4,7 @@ import model.CommandeFournisseur;
 import util.DatabaseConnection;
 import exceptions.FournisseurNotFoundException;
 import exceptions.MedicamentNotFoundException;
+import exceptions.AnnulationCommandeImpossibleException;
 
 import java.sql.*;
 
@@ -94,6 +95,65 @@ public void creerCommande(CommandeFournisseur c)
     }
 }
 
+import exceptions.AnnulationCommandeImpossibleException;
+import java.sql.*;
+
+public void annulerCommande(int idCommande)
+        throws AnnulationCommandeImpossibleException {
+
+    String sqlCheckEtat =
+        "SELECT etat FROM commandefournisseur WHERE idCommande = ?";
+
+    String sqlAnnuler =
+        "UPDATE commandefournisseur SET etat = 'ANNULEE' WHERE idCommande = ?";
+
+    try (Connection con = DatabaseConnection.getConnection()) {
+
+        con.setAutoCommit(false); // 🔒 transaction
+
+        try {
+
+            String etatCommande;
+
+            // 1️⃣ Vérifier l'état de la commande
+            try (PreparedStatement psCheck = con.prepareStatement(sqlCheckEtat)) {
+                psCheck.setInt(1, idCommande);
+                ResultSet rs = psCheck.executeQuery();
+
+                if (!rs.next()) {
+                    throw new AnnulationCommandeImpossibleException(
+                        "Commande introuvable (id=" + idCommande + ")"
+                    );
+                }
+
+                etatCommande = rs.getString("etat");
+            }
+
+            // 2️⃣ Vérifier règle métier
+            if ("REÇUE".equalsIgnoreCase(etatCommande)) {
+                throw new AnnulationCommandeImpossibleException(
+                    "Annulation impossible : la commande est déjà reçue."
+                );
+            }
+
+            // 3️⃣ Annuler la commande
+            try (PreparedStatement psUpdate = con.prepareStatement(sqlAnnuler)) {
+                psUpdate.setInt(1, idCommande);
+                psUpdate.executeUpdate();
+            }
+
+            con.commit();
+            System.out.println("✅ Commande annulée avec succès.");
+
+        } catch (Exception e) {
+            con.rollback(); // ❌ annuler si erreur
+            throw e;
+        }
+
+    } catch (SQLException e) {
+        e.printStackTrace();
+    }
+}
 
 
     
@@ -104,30 +164,7 @@ public void creerCommande(CommandeFournisseur c)
     
 
 
-    public void modifierCommande(CommandeFournisseur c) {
-        String sql = "UPDATE commandefournisseur SET " +
-                     "dateCommande = ?, quantite = ?, montantTotal = ?, etat = ?, " +
-                     "idFournisseur = ?, idProduit = ? WHERE idCommande = ?";
-
-        try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-
-            ps.setDate(1, c.getDateCommande());
-            ps.setInt(2, c.getQuantite());
-            ps.setDouble(3, c.getMontantTotal());
-            ps.setString(4, c.getEtat());
-            ps.setInt(5, c.getIdFournisseur());
-            ps.setInt(6, c.getIdProduit());
-            ps.setInt(7, c.getIdCommande());
-
-            ps.executeUpdate();
-            System.out.println("Commande fournisseur modifiée avec succès !");
-
-        } catch (SQLException e) {
-            System.err.println("Erreur lors de la modification");
-            e.printStackTrace();
-        }
-    }
+   
 
     public void annulerCommande(int idCommande) {
         String sql = "UPDATE commandefournisseur SET etat = 'ANNULÉE' WHERE idCommande = ?";
