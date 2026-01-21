@@ -8,7 +8,7 @@ import java.sql.*;
 public class CommandeFournisseurDAO {
 
     public void creerCommande(CommandeFournisseur c) {
-        String sql = "INSERT INTO commande_fournisseur " +
+        String sql = "INSERT INTO commandefournisseur " +
                      "(dateCommande, quantite, montantTotal, etat, idFournisseur, idProduit) " +
                      "VALUES (?, ?, ?, ?, ?, ?)";
 
@@ -32,7 +32,7 @@ public class CommandeFournisseurDAO {
     }
 
     public void modifierCommande(CommandeFournisseur c) {
-        String sql = "UPDATE commande_fournisseur SET " +
+        String sql = "UPDATE commandefournisseur SET " +
                      "dateCommande = ?, quantite = ?, montantTotal = ?, etat = ?, " +
                      "idFournisseur = ?, idProduit = ? WHERE idCommande = ?";
 
@@ -57,7 +57,7 @@ public class CommandeFournisseurDAO {
     }
 
     public void annulerCommande(int idCommande) {
-        String sql = "UPDATE commande_fournisseur SET etat = 'ANNULÉE' WHERE idCommande = ?";
+        String sql = "UPDATE commandefournisseur SET etat = 'ANNULÉE' WHERE idCommande = ?";
 
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -77,7 +77,7 @@ public class CommandeFournisseurDAO {
 
         String getCommande = "SELECT idProduit, quantite FROM commande_fournisseur WHERE idCommande = ?";
         String updateStock = "UPDATE produit SET quantiteStock = quantiteStock + ? WHERE id = ?";
-        String updateCommande = "UPDATE commande_fournisseur SET etat = 'REÇUE', dateReception = ? WHERE idCommande = ?";
+        String updateCommande = "UPDATE commandefournisseur SET etat = 'REÇUE', dateReception = ? WHERE idCommande = ?";
 
         try (Connection con = DatabaseConnection.getConnection()) {
 
@@ -124,39 +124,13 @@ public class CommandeFournisseurDAO {
     }
 
 
-    public CommandeFournisseur findById(int idCommande) {
-        String sql = "SELECT * FROM commande_fournisseur WHERE idCommande = ?";
-
-        try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-
-            ps.setInt(1, idCommande);
-            ResultSet rs = ps.executeQuery();
-
-            if (rs.next()) {
-                return new CommandeFournisseur(
-                    rs.getInt("idCommande"),
-                    rs.getDate("dateCommande"),
-                    rs.getDate("dateReception"),
-                    rs.getInt("quantite"),
-                    rs.getDouble("montantTotal"),
-                    rs.getString("etat"),
-                    rs.getInt("idFournisseur"),
-                    rs.getInt("idProduit")
-                );
-            }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        return null;
-    }
+    
+            
     
     
     public void rapportPerformanceFournisseurs() {
         String sql = "SELECT idFournisseur, SUM(quantite) AS totalLivree " +
-                     "FROM commande_fournisseur WHERE etat = 'REÇUE' GROUP BY idFournisseur";
+                     "FROM commandefournisseur WHERE etat = 'RECUE' GROUP BY idFournisseur";
 
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql);
