@@ -132,10 +132,10 @@ SELECT * FROM client;
 
 -- Créer une commande fournisseur
 INSERT INTO commandeFournisseur
-(dateCommande, dateReception, quantite, montantTotal, etat, idFournisseur, nom_medicamment)
-VALUES (?, ?, ?, ?, ?, ?, ?);
+(dateCommande,  quantite, montantTotal, etat, idFournisseur, nom_medicamment)
+VALUES (?, ?, ?, ?, ?, ?);
 
-SELECT id FROM fournisseur WHERE id = ?
+SELECT id FROM fournisseur WHERE id = ?;
 
  SELECT fm.prixFournisseur 
         FROM medicament m 
@@ -156,33 +156,32 @@ SET quantite = ?, montantTotal = ?
 WHERE idCommande = ?;
 
 -- Annuler une commande fournisseur
-UPDATE commande_fournisseur SET etat = 'ANNULÉE' WHERE idCommande = ?;
+UPDATE commandefournisseur SET etat = 'ANNULEE' WHERE idCommande = ?;
 
 
 -- reception d'une commande
-UPDATE commandefournisseur SET etat = 'ANNULEE' WHERE idCommande = ?
+UPDATE commandefournisseur SET etat = 'RECUE' WHERE idCommande = ?;
 
 -- augmentation de stock
 UPDATE produit
 SET quantiteStock = quantiteStock + ?
-WHERE idProduit = ?;
+WHERE nom = ?;
 
 
 
 
 -- enregistrerVente
-SELECT prix, quantiteStock, nom_medicamment 
-                FROM produit WHERE idProduit = ?;
+SELECT prixC, quantiteStock,seuilAlerte FROM produit WHERE nom = ?;
 
  INSERT INTO vente (dateVente, quantite, montantTotal, nom_medicamment, idClient) 
-                VALUES (?, ?, ?, ?, ?, ?);
-
+VALUES (?, ?, ?, ?, ?);
+UPDATE produit SET quantiteStock = quantiteStock - ? WHERE nom = ?;
 -- diminuer la quantite de stock
 UPDATE produit SET quantiteStock = quantiteStock - ? 
         WHERE idProduit = ?;
 
 -- liste  de vente
-SELECT * FROM vente ORDER BY dateVente DESC
+SELECT * FROM vente ORDER BY dateVente DESC;
 
 -- HISTORIQUE DES ACHATS CLIENT(chaque client les produit qu'il les a acheté)
 SELECT c.nom , p.nom, v.quantite,v.montantTotal
@@ -215,8 +214,33 @@ AND v.dateVente BETWEEN ? AND ?;
 
 
 -- Performance des fournisseurs
- -- Montant total commandé par fournisseur
+ -- Montant total commandé par fproduitournisseur
 SELECT f.nom, SUM(c.montantTotal) AS totalCommandes
 FROM commandeFournisseur c
 JOIN fournisseur f ON c.idFournisseur = f.id
+WHERE c.etat = 'RECUE'
 GROUP BY f.nom;
+
+
+SELECT nom_medicamment, quantite, etat 
+fROM commandefournisseur WHERE idCommande = ?;
+
+
+UPDATE commandefournisseur SET etat = 'RECUE' WHERE idCommande = ?;
+
+SELECT * FROM vente ORDER BY dateVente DESC;
+
+SELECT 
+    v.idVente,
+    v.dateVente,
+    v.quantite,
+    v.montantTotal,
+    v.nom_medicamment,
+    c.cin
+FROM vente v
+JOIN client c ON v.idClient = c.idClient
+ORDER BY v.dateVente DESC;
+
+SELECT v.idVente, v.dateVente, v.quantite, v.montantTotal, 
+v.nom_medicamment, c.cin 
+FROM vente v JOIN client c ON v.idClient = c.idClient;
