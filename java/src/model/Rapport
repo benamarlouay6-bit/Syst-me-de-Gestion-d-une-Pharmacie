@@ -1,0 +1,20 @@
+package model;
+
+public class Rapport {
+
+    private String libelle;
+    private double valeur;
+
+    public Rapport(String libelle, double valeur) {
+        this.libelle = libelle;
+        this.valeur = valeur;
+    }
+
+    public String getLibelle() {
+        return libelle;
+    }
+
+    public double getValeur() {
+        return valeur;
+    }
+}
