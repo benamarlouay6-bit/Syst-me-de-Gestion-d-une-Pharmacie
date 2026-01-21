@@ -1,139 +1,121 @@
 package dao;
 
 import model.Vente;
-import util.DatabaseConnection;
-
-import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
-
-
-
-
-    
-
-public class VenteDAO {
-
-
-    package dao;
-
-import model.Vente;
-import util.DatabaseConnection;
+import ui.utils.DatabaseConnection;
 
 import java.sql.*;
 
+import exception.StockInsuffisantException;
+
 public class VenteDAO {
 
-    public void ajouterVente(Vente v) throws SQLException {
+	public void enregistrerVente(
+	        Date dateVente,
+	        String nomMedicament,
+	        int quantite,
+	        String cinClient
+	) {
 
-        String sqlGetProduit =
-            "SELECT prix, quantiteStock " +
-            "FROM produit WHERE nom = ?";
+	    String checkClient =
+	            "SELECT idClient FROM client WHERE cin = ?";
 
-        String sqlInsertVente =
-            "INSERT INTO vente (dateVente, quantite, montantTotal, nom_medicamment, idClient) " +
-            "VALUES (?, ?, ?, ?, ?)";
+	    String insertClient =
+	            "INSERT INTO client (nom, cin) VALUES (?, ?)";
 
-        String sqlUpdateStock =
-            "UPDATE produit SET quantiteStock = quantiteStock - ? " +
-            "WHERE nom = ?";
+	    String checkProduit =
+	            "SELECT prixC, quantiteStock, seuilAlerte FROM produit WHERE nom = ?";
 
-        try (Connection con = DatabaseConnection.getConnection()) {
+	    String insertVente =
+	            "INSERT INTO vente (dateVente, quantite, montantTotal, nom_medicamment, idClient) " +
+	            "VALUES (?, ?, ?, ?, ?)";
 
-            con.setAutoCommit(false); // 🔒 début transaction
+	    String updateStock =
+	            "UPDATE produit SET quantiteStock = quantiteStock - ? WHERE nom = ?";
 
-            try {
+	    try (Connection con = DatabaseConnection.getConnection()) {
 
-                double prix;
-                int stockActuel;
+	        con.setAutoCommit(false);
 
-                // 1️⃣ Récupérer prix + stock du produit par NOM
-                try (PreparedStatement psGet = con.prepareStatement(sqlGetProduit)) {
-                    psGet.setString(1, v.getNom_medicamment());
+	       
+	        int idClient;
 
-                    ResultSet rs = psGet.executeQuery();
+	        try (PreparedStatement ps = con.prepareStatement(checkClient)) {
+	            ps.setString(1, cinClient);
+	            ResultSet rs = ps.executeQuery();
 
-                    if (!rs.next()) {
-                        throw new SQLException(
-                            "Produit introuvable : " + v.getNom_medicamment()
-                        );
-                    }
+	            if (rs.next()) {
+	                idClient = rs.getInt("idClient");
+	            } else {
+	                try (PreparedStatement psInsert =
+	                             con.prepareStatement(insertClient, Statement.RETURN_GENERATED_KEYS)) {
 
-                    prix = rs.getDouble("prix");
-                    stockActuel = rs.getInt("quantiteStock");
-                }
+	                    psInsert.setString(1, "Client " + cinClient);
+	                    psInsert.setString(2, cinClient);
+	                    psInsert.executeUpdate();
 
-                // 2️⃣ Vérifier stock suffisant
-                if (stockActuel < v.getQuantite()) {
-                    throw new SQLException(
-                        "Stock insuffisant pour " + v.getNom_medicamment()
-                    );
-                }
+	                    ResultSet keys = psInsert.getGeneratedKeys();
+	                    keys.next();
+	                    idClient = keys.getInt(1);
+	                }
+	            }
+	        }
 
-                // 3️⃣ Calcul du montant total
-                double montantTotal = v.getQuantite() * prix;
-                v.setMontantTotal(montantTotal);
+	        
+	        double prix;
+	        int stock;
+	        int seuil;
 
-                // 4️⃣ Insertion de la vente
-                try (PreparedStatement psVente = con.prepareStatement(sqlInsertVente)) {
-                    psVente.setDate(1, v.getDateVente());
-                    psVente.setInt(2, v.getQuantite());
-                    psVente.setDouble(3, montantTotal);
-                    psVente.setString(4, v.getNom_medicamment());
-                    psVente.setInt(5, v.getIdClient());
+	        try (PreparedStatement ps = con.prepareStatement(checkProduit)) {
+	            ps.setString(1, nomMedicament);
+	            ResultSet rs = ps.executeQuery();
 
-                    psVente.executeUpdate();
-                }
+	            if (!rs.next()) {
+	                throw new RuntimeException("Médicament introuvable !");
+	            }
 
-                // 5️⃣ Mise à jour du stock (diminue)
-                try (PreparedStatement psStock = con.prepareStatement(sqlUpdateStock)) {
-                    psStock.setInt(1, v.getQuantite());
-                    psStock.setString(2, v.getNom_medicamment());
-                    psStock.executeUpdate();
-                }
+	            prix  = rs.getDouble("prixC");
+	            stock = rs.getInt("quantiteStock");
+	            seuil = rs.getInt("seuilAlerte");
+	        }
 
-                con.commit();
-                System.out.println("✅ Vente enregistrée et stock mis à jour.");
+	        if (stock < quantite) {
+	            throw new RuntimeException("Stock insuffisant !");
+	        }
 
-            } catch (Exception e) {
-                con.rollback(); // ❌ annuler si problème
-                throw e;
-            }
-        }
-    }
-}
+	        if (stock <= seuil) {
+	            System.out.println(" ALERTE : Stock sous le seuil !");
+	        }
 
+	        double montant = prix * quantite;
 
-    public void afficherVentes() {
+	        try (PreparedStatement ps = con.prepareStatement(insertVente)) {
+	            ps.setDate(1, dateVente);
+	            ps.setInt(2, quantite);
+	            ps.setDouble(3, montant);
+	            ps.setString(4, nomMedicament);
+	            ps.setInt(5, idClient);
+	            ps.executeUpdate();
+	        }
 
+	        
+	        try (PreparedStatement ps = con.prepareStatement(updateStock)) {
+	            ps.setInt(1, quantite);
+	            ps.setString(2, nomMedicament);
+	            ps.executeUpdate();
+	        }
+
+	        con.commit();
+	        System.out.println(" Vente enregistrée avec succès");
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+	}
+
+    public ResultSet getAllVentes() throws SQLException {
         String sql = "SELECT * FROM vente ORDER BY dateVente DESC";
-
-        try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-
-            System.out.println("========== LISTE DES VENTES ==========");
-
-            while (rs.next()) {
-                System.out.println(
-                    "ID Vente : " + rs.getInt("idVente") +
-                    " | Date : " + rs.getDate("dateVente") +
-                    " | Médicament : " + rs.getString("nom_medicamment") +
-                    " | Quantité : " + rs.getInt("quantite") +
-                    " | Montant Total : " + rs.getDouble("montantTotal") +
-                    " | Client ID : " + rs.getInt("idClient")
-                );
-            }
-
-            System.out.println("======================================");
-
-        } catch (SQLException e) {
-            System.err.println("❌ Erreur lors de l'affichage des ventes");
-            e.printStackTrace();
-        }
+        Connection con = DatabaseConnection.getConnection();
+        Statement st = con.createStatement();
+        return st.executeQuery(sql);
     }
-}
-
-
-    
 }
