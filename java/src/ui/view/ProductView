@@ -1,59 +1,238 @@
 package ui.view;
 
+import dao.ProduitDAO;
+import exception.ProduitNotFoundException;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
+import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import model.Produit;
+
+import java.sql.SQLException;
+import java.util.List;
 
 public class ProductView {
 
+    private TableView<Produit> table = new TableView<>();
+    private ObservableList<Produit> data = FXCollections.observableArrayList();
+    private ProduitDAO produitDAO = new ProduitDAO();
+
     public void start(Stage stage) {
 
-        // 🔹 TITRE
         Label title = new Label("Gestion des Produits");
         title.getStyleClass().add("title");
 
-        // 🔹 BOUTONS (UI SEULE)
-        Button btnAdd = new Button("Ajouter un produit");
-        Button btnEdit = new Button("Modifier un produit");
-        Button btnDelete = new Button("Supprimer un produit");
-        Button btnBack = new Button("Retour au menu");
+        TextField txtSearch = new TextField();
+        txtSearch.setPromptText("Nom du produit");
 
-        // 🔹 ACTIONS (TEMPORAIRES)
-        btnAdd.setOnAction(e ->
-                System.out.println("Ajouter produit (à implémenter)")
-        );
+        Button btnSearch = new Button("Rechercher");
+        Button btnRefresh = new Button("Actualiser");
 
-        btnEdit.setOnAction(e ->
-                System.out.println("Modifier produit (à implémenter)")
-        );
+        HBox searchBox = new HBox(10, txtSearch, btnSearch, btnRefresh);
+        searchBox.setAlignment(Pos.CENTER);
 
-        btnDelete.setOnAction(e ->
-                System.out.println("Supprimer produit (à implémenter)")
-        );
+        TableColumn<Produit, Integer> colId = new TableColumn<>("ID");
+        colId.setCellValueFactory(new PropertyValueFactory<>("idProduit"));
 
-        btnBack.setOnAction(e ->
-                new MenuView().start(stage)
-        );
+        TableColumn<Produit, String> colNom = new TableColumn<>("Nom");
+        colNom.setCellValueFactory(new PropertyValueFactory<>("nom"));
 
-        // 🔹 LAYOUT
-        VBox root = new VBox(20);
-        root.getChildren().addAll(
+        TableColumn<Produit, Double> colPrix = new TableColumn<>("Prix Vente");
+        colPrix.setCellValueFactory(new PropertyValueFactory<>("prixC"));
+
+        TableColumn<Produit, Integer> colQte = new TableColumn<>("Quantité");
+        colQte.setCellValueFactory(new PropertyValueFactory<>("quantiteStock"));
+
+        table.getColumns().addAll(colId, colNom, colPrix, colQte);
+        table.setItems(data);
+
+        Button btnAdd = new Button("Ajouter");
+        Button btnEdit = new Button("Modifier");
+        Button btnDelete = new Button("Supprimer");
+        Button btnBack = new Button("Retour");
+
+        HBox actions = new HBox(15, btnAdd, btnEdit, btnDelete);
+        actions.setAlignment(Pos.CENTER);
+
+        VBox root = new VBox(20,
                 title,
-                btnAdd,
-                btnEdit,
-                btnDelete,
+                searchBox,
+                table,
+                actions,
                 btnBack
         );
+
+        root.setAlignment(Pos.CENTER);
         root.getStyleClass().add("container");
 
-        // 🔹 SCENE
-        Scene scene = new Scene(root, 400, 350);
+        Scene scene = new Scene(root, 800, 500);
         scene.getStylesheets().add("/css/style.css");
 
         stage.setScene(scene);
         stage.setTitle("Produits");
         stage.show();
+
+        loadAllProduits();
+
+        // ACTIONS
+        btnRefresh.setOnAction(e -> loadAllProduits());
+
+        btnSearch.setOnAction(e -> {
+            try {
+                List<Produit> result = produitDAO.rechercherProduitParNom(txtSearch.getText());
+                data.setAll(result);
+            } catch (ProduitNotFoundException ex) {
+                showAlert(Alert.AlertType.INFORMATION, ex.getMessage());
+            } catch (SQLException ex) {
+                showAlert(Alert.AlertType.ERROR, "Erreur base de données");
+            }
+        });
+
+        btnAdd.setOnAction(e -> showAddDialog());
+
+        btnEdit.setOnAction(e -> showEditDialog());
+
+        btnDelete.setOnAction(e -> deleteProduit());
+
+        btnBack.setOnAction(e -> new MenuView().start(stage));
+    }
+
+    private void loadAllProduits() {
+        try {
+            data.setAll(produitDAO.getAllProduits());
+        } catch (SQLException e) {
+            showAlert(Alert.AlertType.ERROR, "Impossible de charger les produits");
+        }
+    }
+
+    private void showAddDialog() {
+        Dialog<Produit> dialog = new Dialog<>();
+        dialog.setTitle("Ajouter Produit");
+
+        TextField nom = new TextField();
+        TextField prixF = new TextField();
+        TextField prixC = new TextField();
+        TextField qte = new TextField();
+        TextField seuil = new TextField();
+
+        VBox box = new VBox(10,
+                new Label("Nom"), nom,
+                new Label("Prix Fournisseur"), prixF,
+                new Label("Prix Client"), prixC,
+                new Label("Quantité"), qte,
+                new Label("Seuil Alerte"), seuil
+        );
+
+        dialog.getDialogPane().setContent(box);
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        dialog.setResultConverter(btn -> {
+            if (btn == ButtonType.OK) {
+                return new Produit(
+                        nom.getText(),
+                        Double.parseDouble(prixF.getText()),
+                        Double.parseDouble(prixC.getText()),
+                        Integer.parseInt(qte.getText()),
+                        Integer.parseInt(seuil.getText())
+                );
+            }
+            return null;
+        });
+
+        dialog.showAndWait().ifPresent(p -> {
+            try {
+                produitDAO.ajouterProduit(p);
+                loadAllProduits();
+                showAlert(Alert.AlertType.INFORMATION, "Produit ajouté");
+            } catch (Exception ex) {
+                showAlert(Alert.AlertType.ERROR, "Erreur ajout produit");
+            }
+        });
+    }
+
+    private void showEditDialog() {
+        Produit selected = table.getSelectionModel().getSelectedItem();
+
+        if (selected == null) {
+            showAlert(Alert.AlertType.WARNING, "Sélectionnez un produit");
+            return;
+        }
+
+        Dialog<Produit> dialog = new Dialog<>();
+        dialog.setTitle("Modifier Produit");
+
+        TextField nom = new TextField(selected.getNom());
+        TextField prixF = new TextField(String.valueOf(selected.getPrixF()));
+        TextField prixC = new TextField(String.valueOf(selected.getPrixC()));
+        TextField qte = new TextField(String.valueOf(selected.getQuantiteStock()));
+        TextField seuil = new TextField(String.valueOf(selected.getSeuilAlerte()));
+
+        VBox box = new VBox(10,
+                new Label("Nom"), nom,
+                new Label("Prix Fournisseur"), prixF,
+                new Label("Prix Client"), prixC,
+                new Label("Quantité"), qte,
+                new Label("Seuil Alerte"), seuil
+        );
+
+        dialog.getDialogPane().setContent(box);
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        dialog.setResultConverter(btn -> {
+            if (btn == ButtonType.OK) {
+                selected.setNom(nom.getText());
+                selected.setPrixF(Double.parseDouble(prixF.getText()));
+                selected.setPrixC(Double.parseDouble(prixC.getText()));
+                selected.setQuantiteStock(Integer.parseInt(qte.getText()));
+                selected.setSeuilAlerte(Integer.parseInt(seuil.getText()));
+                return selected;
+            }
+            return null;
+        });
+
+        dialog.showAndWait().ifPresent(p -> {
+            try {
+                produitDAO.modifierProduit(p);
+                loadAllProduits();
+                showAlert(Alert.AlertType.INFORMATION, "Produit modifié");
+            } catch (Exception e) {
+                showAlert(Alert.AlertType.ERROR, "Erreur modification");
+            }
+        });
+    }
+
+    private void deleteProduit() {
+        Produit selected = table.getSelectionModel().getSelectedItem();
+
+        if (selected == null) {
+            showAlert(Alert.AlertType.WARNING, "Sélectionnez un produit");
+            return;
+        }
+
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setHeaderText("Supprimer produit ?");
+        confirm.setContentText("Confirmer la suppression");
+
+        confirm.showAndWait().ifPresent(btn -> {
+            if (btn == ButtonType.OK) {
+                try {
+                    produitDAO.supprimerProduit(selected.getIdProduit());
+                    loadAllProduits();
+                } catch (SQLException e) {
+                    showAlert(Alert.AlertType.ERROR, "Erreur suppression");
+                }
+            }
+        });
+    }
+
+    private void showAlert(Alert.AlertType type, String msg) {
+        Alert alert = new Alert(type);
+        alert.setContentText(msg);
+        alert.show();
     }
 }
