@@ -57,7 +57,6 @@ CREATE TABLE client (
 CREATE TABLE commandeFournisseur (
     idCommande INT AUTO_INCREMENT PRIMARY KEY,
     dateCommande DATE NOT NULL,
-    dateReception DATE,
     quantite INT NOT NULL,
     montantTotal DOUBLE NOT NULL,
     etat VARCHAR(30) NOT NULL
