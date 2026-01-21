@@ -1,28 +1,93 @@
 package ui.view;
 
+import dao.VenteDAO;
+import exception.StockInsuffisantException;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import model.Vente;
+
+import java.sql.Date;
+import java.time.LocalDate;
 
 public class SaleView {
+
+    private final VenteDAO dao = new VenteDAO();
 
     public void start(Stage stage) {
 
         Label title = new Label("Vente Client");
         title.getStyleClass().add("title");
 
-        Button btnBack = new Button("Retour");
-        btnBack.setOnAction(e -> new MenuView().start(stage));
+        TextField txtMedicament = new TextField();
+        txtMedicament.setPromptText("nom medicament");
+        TextField txtQuantite = new TextField();
+        txtQuantite.setPromptText("quantite vendue");
+        TextField txtIdClient = new TextField();
+        txtIdClient.setPromptText("CIN du client");
+        GridPane form = new GridPane();
+        form.setHgap(15);
+        form.setVgap(15);
 
-        VBox root = new VBox(15, title, btnBack);
+        form.add(new Label("Nom du médicament"), 0, 0);
+        form.add(txtMedicament, 1, 0);
+
+        form.add(new Label("Quantité à vendre"), 0, 1);
+        form.add(txtQuantite, 1, 1);
+
+        form.add(new Label("CIN"), 0, 2);
+        form.add(txtIdClient, 1, 2);
+
+        Button btnVendre = new Button("Vendre");
+        Button btnRetour = new Button("Retour");
+        Button btnListe = new Button("Liste des ventes");
+        GridPane grid = new GridPane();
+        grid.setVgap(10);
+        grid.setHgap(10);
+
+        grid.addRow(0, new Label("Nom Médicament"), txtMedicament);
+        grid.addRow(1, new Label("Quantité"), txtQuantite);
+        grid.addRow(2, new Label("CIN Client"), txtIdClient);
+        btnListe.setOnAction(e ->
+        new ListeVenteView().start(stage)
+);
+
+        btnVendre.setOnAction(e -> {
+            new VenteDAO().enregistrerVente(
+                    Date.valueOf(LocalDate.now()),
+                    txtMedicament.getText(),
+                    Integer.parseInt(txtQuantite.getText()),
+                    txtIdClient.getText()
+            );
+
+            new ListeVenteView().start(stage);
+        });
+
+
+       
+
+        btnRetour.setOnAction(e -> new MenuView().start(stage));
+        
+        VBox root = new VBox(
+                15,
+                title,
+                txtMedicament,
+                txtQuantite,
+                txtIdClient,
+                btnVendre,
+                btnListe,
+                btnRetour
+        );
+
         root.getStyleClass().add("container");
 
-        Scene scene = new Scene(root, 400, 300);
+        Scene scene = new Scene(root, 420, 380);
         scene.getStylesheets().add("/css/style.css");
 
-        stage.setScene(scene);
         stage.setTitle("Ventes");
+        stage.setScene(scene);
         stage.show();
     }
 }
