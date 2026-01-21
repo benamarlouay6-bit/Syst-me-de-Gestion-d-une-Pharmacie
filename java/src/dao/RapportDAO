@@ -1,0 +1,54 @@
+package dao;
+
+import ui.utils.DatabaseConnection;
+
+import java.sql.*;
+
+public class RapportDAO {
+
+    
+    public ResultSet etatStocks() throws SQLException {
+
+        String sql =
+            "SELECT idProduit, nom, quantiteStock, seuilAlerte " +
+            "FROM produit";
+
+        Connection con = DatabaseConnection.getConnection();
+        Statement st = con.createStatement();
+        return st.executeQuery(sql);
+    }
+
+    
+    public double chiffreAffaires() throws SQLException {
+
+        String sql =
+            "SELECT " +
+            "(SELECT IFNULL(SUM(v.montantTotal),0) FROM vente v) - " +
+            "(SELECT IFNULL(SUM(c.montantTotal),0) FROM commandefournisseur c WHERE c.etat='RECUE') " +
+            "AS chiffreAffaires";
+
+        Connection con = DatabaseConnection.getConnection();
+        Statement st = con.createStatement();
+        ResultSet rs = st.executeQuery(sql);
+
+        if (rs.next()) {
+            return rs.getDouble("chiffreAffaires");
+        }
+        return 0;
+    }
+
+   
+    public ResultSet performanceFournisseurs() throws SQLException {
+
+        String sql =
+            "SELECT f.nom, SUM(c.montantTotal) AS total " +
+            "FROM commandefournisseur c " +
+            "JOIN fournisseur f ON c.idFournisseur = f.id " +
+            "WHERE c.etat = 'RECUE' " +
+            "GROUP BY f.nom";
+
+        Connection con = DatabaseConnection.getConnection();
+        Statement st = con.createStatement();
+        return st.executeQuery(sql);
+    }
+}
