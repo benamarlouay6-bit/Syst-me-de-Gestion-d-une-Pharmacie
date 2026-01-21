@@ -27,6 +27,25 @@ CREATE TABLE fournisseur (
     mail VARCHAR(100) NOT NULL
 );
 
+CREATE TABLE medicament (
+    idMedicament INT AUTO_INCREMENT PRIMARY KEY,
+    nom VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE fournisseur_medicament (
+    idFournisseur INT,
+    idMedicament INT,
+    prixFournisseur DOUBLE NOT NULL,
+    quantiteStock INT NOT NULL,
+
+    PRIMARY KEY (idFournisseur, idMedicament),
+
+    FOREIGN KEY (idFournisseur) REFERENCES fournisseur(idFournisseur),
+    FOREIGN KEY (idMedicament) REFERENCES medicament(idMedicament)
+);
+
+
+
 
 CREATE TABLE client (
     idClient INT AUTO_INCREMENT PRIMARY KEY,
@@ -44,13 +63,12 @@ CREATE TABLE commandeFournisseur (
     etat VARCHAR(30) NOT NULL
         CHECK (etat IN ('EN_ATTENTE', 'RECUE', 'ANNULEE')),
     idFournisseur INT NOT NULL,
-    idProduit INT NOT NULL,
+    nom_medicamment INT NOT NULL,
 
     CONSTRAINT fk_commande_fournisseur
         FOREIGN KEY (idFournisseur) REFERENCES fournisseur(id),
 
-    CONSTRAINT fk_commande_produit
-        FOREIGN KEY (idProduit) REFERENCES produit(idProduit)
+    
 );
 
 
