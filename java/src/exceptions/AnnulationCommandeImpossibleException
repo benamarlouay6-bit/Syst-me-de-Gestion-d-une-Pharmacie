@@ -1,0 +1,8 @@
+package exception;
+
+public class AnnulationCommandeImpossibleException extends Exception{
+	public AnnulationCommandeImpossibleException(String msg)
+	{
+		super(msg);
+	}
+}
