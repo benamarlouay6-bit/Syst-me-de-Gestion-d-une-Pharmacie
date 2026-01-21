@@ -114,7 +114,7 @@ SET quantite = ?, montantTotal = ?
 WHERE idCommande = ?;
 
 -- Annuler une commande fournisseur
-DELETE FROM commandefournisseur WHERE idCommande=?;
+UPDATE commande_fournisseur SET etat = 'ANNULÉE' WHERE idCommande = ?;
 
 
 -- reception d'une commande
