@@ -2,7 +2,7 @@ package ui.utils;
 
 public class Session {
 
-    private static String role; // "ADMIN" ou "EMPLOYE"
+    private static String role; 
 
     public static void setRole(String userRole) {
         role = userRole;
