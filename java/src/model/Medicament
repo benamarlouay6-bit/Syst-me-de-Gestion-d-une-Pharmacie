@@ -1,0 +1,26 @@
+package model;
+
+public class Medicament {
+
+    private int idMedicament;
+    private String nom;
+    private double prixAchat;
+
+    public Medicament(int idMedicament, String nom, double prixAchat) {
+        this.idMedicament = idMedicament;
+        this.nom = nom;
+        this.prixAchat = prixAchat;
+    }
+
+    public int getIdMedicament() {
+        return idMedicament;
+    }
+
+    public String getNom() {
+        return nom;
+    }
+
+    public double getPrixAchat() {
+        return prixAchat;
+    }
+}
