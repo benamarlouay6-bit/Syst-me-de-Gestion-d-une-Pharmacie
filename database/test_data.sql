@@ -171,15 +171,18 @@ WHERE idProduit = ?;
 
 
 -- enregistrerVente
-INSERT INTO vente (dateVente, quantite, montantTotal, idClient, idProduit)
-VALUES (?, ?, ?, ?, ?);
+SELECT prix, quantiteStock, nom_medicamment 
+                FROM produit WHERE idProduit = ?;
+
+ INSERT INTO vente (dateVente, quantite, montantTotal, nom_medicamment, idClient) 
+                VALUES (?, ?, ?, ?, ?, ?);
 
 -- diminuer la quantite de stock
-UPDATE produit SET quantiteStock = quantiteStock + ? 
-        WHERE nomMedicament = ?;
+UPDATE produit SET quantiteStock = quantiteStock - ? 
+        WHERE idProduit = ?;
 
 -- liste  de vente
-SELECT * FROM vente;
+SELECT * FROM vente ORDER BY dateVente DESC
 
 -- HISTORIQUE DES ACHATS CLIENT(chaque client les produit qu'il les a acheté)
 SELECT c.nom , p.nom, v.quantite,v.montantTotal
