@@ -1,7 +1,7 @@
 package dao;
 
 import model.Fournisseur;
-import util.DatabaseConnection;
+import ui.utils.*;
 
 import java.sql.*;
 
