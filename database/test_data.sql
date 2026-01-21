@@ -5,24 +5,65 @@ INSERT INTO administrateur (nom)
 VALUES (?);
 
 
-INSERT INTO produit (nom,prixF,prixC,quantiteStock,seuilAlerte)
-VALUES
-('Doliprane 500mg',2.20,3.50,120, 20),
-('Efferalgan 1g',2.80,4.20,80, 15),
-('Aspirine 500mg',1.90,3.00,60,10),
-('Amoxicilline 500mg',5.50,7.80,40, 10),
-('Vitamine C 1000mg',3.00,4.90,70,15),
-('Ibuprofène 400mg',2.10,3.60,90,20),
-('Smecta',2.50,4.00,50,10),
-('Gaviscon',4.20,6.80,45,10),
-('Biseptine',3.80,6.00,30,8),
-('Spasfon',2.70,4.30,65,15);
+
 
 INSERT INTO fournisseur (nom,telephone,mail)
 VALUES
 ('PharmaTunisie', '71234567', 'contact@pharmatunisie.tn'),
 ('MedDistrib', '73456789', 'info@meddistrib.tn'),
 ('HealthPlus', '70321456', 'support@healthplus.tn');
+
+INSERT INTO medicament (nom) VALUES
+('Doliprane'),
+('Efferalgan'),
+('Amoxicilline'),
+('Aspirine'),
+('Ibuprofene'),
+('Vitamine C'),
+
+('Paracetamol'),
+('Augmentin'),
+('Spasfon'),
+('Smecta'),
+('Gaviscon'),
+('Zyrtec'),
+
+('Insuline'),
+('Ventoline'),
+('Cardioaspirine'),
+('Levothyrox'),
+('Omeprazole'),
+('Metformine');
+
+
+INSERT INTO fournisseur_medicament 
+(idFournisseur, idMedicament, prixFournisseur, quantiteStock) VALUES
+(1, 1, 2.50, 100),
+(1, 2, 2.80, 120),
+(1, 3, 8.00, 60),
+(1, 4, 3.00, 90),
+(1, 5, 3.50, 75),
+(1, 6, 1.80, 200);
+
+INSERT INTO fournisseur_medicament 
+(idFournisseur, idMedicament, prixFournisseur, quantiteStock) VALUES
+(2, 7, 2.30, 110),
+(2, 8, 9.50, 50),
+(2, 9, 2.00, 130),
+(2, 10, 1.90, 140),
+(2, 11, 4.20, 80),
+(2, 12, 3.60, 95);
+
+INSERT INTO fournisseur_medicament 
+(idFournisseur, idMedicament, prixFournisseur, quantiteStock) VALUES
+(3, 13, 15.00, 40),
+(3, 14, 6.00, 70),
+(3, 15, 2.70, 100),
+(3, 16, 4.50, 85),
+(3, 17, 3.20, 90),
+(3, 18, 5.80, 65);
+
+
 
 INSERT INTO client (nom, telephone, cin)
 VALUES
@@ -36,21 +77,7 @@ VALUES
 ('Clinique Ibn Sina', '71999888', NULL);
 
 
-exemple pour louay fil java
-(String sqlVente =
-    "INSERT INTO vente (dateVente, quantite, montantTotal, idClient, idProduit) " +
-    "VALUES (?, ?, ?, ?, ?)";
 
-PreparedStatement psVente = cnx.prepareStatement(sqlVente);
-
-// remplissage des ?
-psVente.setDate(1, dateVente); // 👈 LA DATE
-psVente.setInt(2, quantite);        // quantite
-psVente.setDouble(3,  montantTotal); // montantTotal
-psVente.setInt(4, idClient);        // idClient
-psVente.setInt(5, idProduit);        // idProduit
-
-psVente.executeUpdate();)
 
 -- ajouter employe
 INSERT INTO employe (nom)
