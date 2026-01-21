@@ -4,22 +4,26 @@ import java.sql.Date;
 
 public class CommandeFournisseur {
 
-    private int idCommande;
+    
     private Date dateCommande;
     private Date dateReception;
     private int quantite;
     private double montantTotal;
     private String etat;
     private int idFournisseur;
-    private int idProduit;
+    private String nom_medicamment;
 
-    public int getIdCommande() {
-        return idCommande;
-    }
+    
 
-    public void setIdCommande(int idCommande) {
-        this.idCommande = idCommande;
-    }
+    public CommandeFournisseur(Date dateCommande, int quantite,int idFournisseur,String nom_medicamment){
+        this.dateCommande = dateCommande;
+        this.quantite = quantite;
+        this.idFournisseur = idFournisseur;
+        this.nom_medicamment = nom_medicamment;
+        this.etat = "EN_ATTENTE";      
+        this.dateReception = null;     
+        this.montantTotal = 0; 
+    }      
 
     public Date getDateCommande() {
         return dateCommande;
@@ -69,11 +73,11 @@ public class CommandeFournisseur {
         this.idFournisseur = idFournisseur;
     }
 
-    public int getIdProduit() {
-        return idProduit;
+    public String getNom_medicamment() {
+        return nom_medicamment;
     }
 
-    public void setIdProduit(int idProduit) {
-        this.idProduit = idProduit;
+    public void setNom_medicamment(int nom_medicamment) {
+        this.nom_medicamment = nom_medicamment;
     }
 }
