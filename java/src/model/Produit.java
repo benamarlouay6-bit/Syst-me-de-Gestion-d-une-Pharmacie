@@ -15,7 +15,6 @@ public class Produit {
     	this.quantiteStock=quantiteStock;
     	this.seuilAlerte=seuilAlerte;
     }
-
     public int getIdProduit() { return idProduit; }
     public void setIdProduit(int idProduit) { this.idProduit = idProduit; }
 
