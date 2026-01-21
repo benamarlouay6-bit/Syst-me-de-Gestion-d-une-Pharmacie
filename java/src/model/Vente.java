@@ -4,66 +4,38 @@ import java.sql.Date;
 
 public class Vente {
 
-    private int IdVente;
+    private int idVente;
     private Date dateVente;
     private int quantite;
     private double montantTotal;
-    private int idClient;
     private String nom_medicamment;
+    private int idClient;
 
-    Vente(Date dateVente, int quantite, double montantTotal, int idClient, String nom_medicamment){
-        this.dateVente=dateVente;
-        this.quantite=quantite;
-        this.montantTotal;
-        this.idClient=idClient;
-        this.nom_medicamment=nom_medicamment;
-
-       Vente(int IdVente,Date dateVente, int quantite, double montantTotal, int idClient, String nom_medicamment){
-        this.IdVente=IdVente;
-        this.dateVente=dateVente;
-        this.quantite=quantite;
-        this.montantTotal;
-        this.idClient=idClient;
-        this.nom_medicamment=nom_medicamment;
-    }
-   public int getIdVente(){
-      return IdVente;}
-
-    public void setIdVente(int idVente) {
+    public Vente(int idVente, Date dateVente, int quantite,
+                 double montantTotal, String nom_medicamment, int idClient) {
         this.idVente = idVente;
-    }
-
-    public Date getDateVente() {
-        return dateVente;
-    }
-
-    public void setDateVente(Date dateVente) {
         this.dateVente = dateVente;
-    }
-
-    public int getQuantite() {
-        return quantite;
-    }
-
-    public void setQuantite(int quantite) {
         this.quantite = quantite;
-    }
-
-    public double getMontantTotal() {
-        return montantTotal;
-    }
-
-    public void setMontantTotal(double montantTotal) {
         this.montantTotal = montantTotal;
+        this.nom_medicamment = nom_medicamment;
+        this.idClient = idClient;
     }
-
-    public int getIdClient() {
-        return idClient;
-    }
-
-    public void setIdClient(int idClient) {
+    public Vente(Date dateVente, int quantite, String nom_medicamment, int idClient) {
+        this.dateVente = dateVente;
+        this.quantite = quantite;
+        this.nom_medicamment = nom_medicamment;
         this.idClient = idClient;
     }
 
-    
+
+    public int getIdVente() { return idVente; }
+    public Date getDateVente() { return dateVente; }
+    public int getQuantite() { return quantite; }
+    public double getMontantTotal() { return montantTotal; }
+    public String getNom_medicamment() { return nom_medicamment; }
+    public int getIdClient() { return idClient; }
+
+	public void setMontantTotal(double montant) {this.montantTotal=montant;
+		
+	}
 }
