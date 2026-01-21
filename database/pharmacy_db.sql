@@ -1,4 +1,6 @@
-use pharmacie;
+create database pharma;
+use pharma;
+
 
 CREATE TABLE employe (
     idEmploye INT AUTO_INCREMENT PRIMARY KEY,
@@ -40,7 +42,7 @@ CREATE TABLE fournisseur_medicament (
 
     PRIMARY KEY (idFournisseur, idMedicament),
 
-    FOREIGN KEY (idFournisseur) REFERENCES fournisseur(idFournisseur),
+    FOREIGN KEY (idFournisseur) REFERENCES fournisseur(id),
     FOREIGN KEY (idMedicament) REFERENCES medicament(idMedicament)
 );
 
@@ -64,8 +66,7 @@ CREATE TABLE commandeFournisseur (
     idFournisseur INT NOT NULL,
     nom_medicamment VARCHAR(30) NOT NULL,
 
-    CONSTRAINT fk_commande_fournisseur
-        FOREIGN KEY (idFournisseur) REFERENCES fournisseur(id),
+        FOREIGN KEY (idFournisseur) REFERENCES fournisseur(id)
 
     
 );
@@ -80,8 +81,8 @@ CREATE TABLE vente (
     idClient INT NOT NULL,
     
 
-    CONSTRAINT fk_vente_client
-        FOREIGN KEY (idClient) REFERENCES client(idClient),
+   
+        FOREIGN KEY (idClient) REFERENCES client(idClient)
 
    
 );
