@@ -4,15 +4,19 @@ import java.sql.Date;
 
 public class Vente {
 
-    private int idVente;
+   
     private Date dateVente;
     private int quantite;
     private double montantTotal;
     private int idClient;
     private int idProduit;
 
-    public int getIdVente() {
-        return idVente;
+    Vente(Date dateVente, int quantite, double montantTotal, int idClient, int idProduit){
+        this.dateVente=dateVente;
+        this.quantite=quantite;
+        this.montantTotal;
+        this.idClient=idClient;
+        this.idProduit=idProduit;
     }
 
     public void setIdVente(int idVente) {
