@@ -96,16 +96,43 @@ public class VenteDAO {
     }
 }
 
-public void supprimerVente(int idVente) throws SQLException {
-        String sql = "DELETE FROM vente WHERE idVente = ?";
+package dao;
+
+import util.DatabaseConnection;
+import java.sql.*;
+
+public class VenteDAO {
+
+    public void afficherVentes() {
+
+        String sql = "SELECT * FROM vente ORDER BY dateVente DESC";
 
         try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
 
-            ps.setInt(1, idVente);
-            ps.executeUpdate();
+            System.out.println("========== LISTE DES VENTES ==========");
+
+            while (rs.next()) {
+                System.out.println(
+                    "ID Vente : " + rs.getInt("idVente") +
+                    " | Date : " + rs.getDate("dateVente") +
+                    " | Médicament : " + rs.getString("nom_medicamment") +
+                    " | Quantité : " + rs.getInt("quantite") +
+                    " | Montant Total : " + rs.getDouble("montantTotal") +
+                    " | Client ID : " + rs.getInt("idClient")
+                );
+            }
+
+            System.out.println("======================================");
+
+        } catch (SQLException e) {
+            System.err.println("❌ Erreur lors de l'affichage des ventes");
+            e.printStackTrace();
         }
     }
+}
+
 
     
 }
