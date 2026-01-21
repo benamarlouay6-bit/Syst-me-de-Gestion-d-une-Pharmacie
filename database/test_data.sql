@@ -175,9 +175,8 @@ INSERT INTO vente (dateVente, quantite, montantTotal, idClient, idProduit)
 VALUES (?, ?, ?, ?, ?);
 
 -- diminuer la quantite de stock
-UPDATE produit
-SET quantiteStock = quantiteStock - ?
-WHERE idProduit = ?;
+UPDATE produit SET quantiteStock = quantiteStock + ? 
+        WHERE nomMedicament = ?;
 
 -- liste  de vente
 SELECT * FROM vente;
