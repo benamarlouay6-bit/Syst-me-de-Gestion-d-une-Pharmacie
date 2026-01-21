@@ -7,7 +7,13 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
+
+
+
+    
+
 public class VenteDAO {
+
 
     package dao;
 
@@ -21,16 +27,16 @@ public class VenteDAO {
     public void ajouterVente(Vente v) throws SQLException {
 
         String sqlGetProduit =
-                "SELECT prix, quantiteStock, nom_medicamment " +
-                "FROM produit WHERE idProduit = ?";
+            "SELECT prix, quantiteStock " +
+            "FROM produit WHERE nom = ?";
 
         String sqlInsertVente =
-                "INSERT INTO vente (dateVente, quantite, montantTotal, nom_medicamment, idProduit, idClient) " +
-                "VALUES (?, ?, ?, ?, ?, ?)";
+            "INSERT INTO vente (dateVente, quantite, montantTotal, nom_medicamment, idClient) " +
+            "VALUES (?, ?, ?, ?, ?)";
 
         String sqlUpdateStock =
-                "UPDATE produit SET quantiteStock = quantiteStock - ? " +
-                "WHERE idProduit = ?";
+            "UPDATE produit SET quantiteStock = quantiteStock - ? " +
+            "WHERE nom = ?";
 
         try (Connection con = DatabaseConnection.getConnection()) {
 
@@ -40,68 +46,63 @@ public class VenteDAO {
 
                 double prix;
                 int stockActuel;
-                String nomMed;
 
-                // 1) Récupérer prix + stock + nom du produit
+                // 1️⃣ Récupérer prix + stock du produit par NOM
                 try (PreparedStatement psGet = con.prepareStatement(sqlGetProduit)) {
-                    psGet.setInt(1, v.getIdProduit());
+                    psGet.setString(1, v.getNom_medicamment());
 
-                    try (ResultSet rs = psGet.executeQuery()) {
-                        if (!rs.next()) {
-                            throw new SQLException("Produit introuvable (idProduit=" + v.getIdProduit() + ")");
-                        }
+                    ResultSet rs = psGet.executeQuery();
 
-                        prix = rs.getDouble("prix");                 // <-- adapte si "prixVente"
-                        stockActuel = rs.getInt("quantiteStock");
-                        nomMed = rs.getString("nom_medicamment");   // <-- adapte si "nomMedicament"
+                    if (!rs.next()) {
+                        throw new SQLException(
+                            "Produit introuvable : " + v.getNom_medicamment()
+                        );
                     }
+
+                    prix = rs.getDouble("prix");
+                    stockActuel = rs.getInt("quantiteStock");
                 }
 
-                // 2) Vérifier stock suffisant (sinon on annule)
+                // 2️⃣ Vérifier stock suffisant
                 if (stockActuel < v.getQuantite()) {
-                    throw new SQLException("Stock insuffisant pour '" + nomMed + "'. Stock=" +
-                            stockActuel + ", demandé=" + v.getQuantite());
+                    throw new SQLException(
+                        "Stock insuffisant pour " + v.getNom_medicamment()
+                    );
                 }
 
-                // 3) Calcul montant total
+                // 3️⃣ Calcul du montant total
                 double montantTotal = v.getQuantite() * prix;
+                v.setMontantTotal(montantTotal);
 
-                // 4) INSERT vente
+                // 4️⃣ Insertion de la vente
                 try (PreparedStatement psVente = con.prepareStatement(sqlInsertVente)) {
                     psVente.setDate(1, v.getDateVente());
                     psVente.setInt(2, v.getQuantite());
                     psVente.setDouble(3, montantTotal);
-                    psVente.setString(4, nomMed);          // on sauvegarde le nom depuis produit
-                    psVente.setInt(5, v.getIdProduit());
-                    psVente.setInt(6, v.getIdClient());
+                    psVente.setString(4, v.getNom_medicamment());
+                    psVente.setInt(5, v.getIdClient());
 
                     psVente.executeUpdate();
                 }
 
-                // 5) UPDATE stock produit (diminue)
+                // 5️⃣ Mise à jour du stock (diminue)
                 try (PreparedStatement psStock = con.prepareStatement(sqlUpdateStock)) {
                     psStock.setInt(1, v.getQuantite());
-                    psStock.setInt(2, v.getIdProduit());
+                    psStock.setString(2, v.getNom_medicamment());
                     psStock.executeUpdate();
                 }
 
                 con.commit();
-                System.out.println("✅ Vente enregistrée + stock mis à jour.");
+                System.out.println("✅ Vente enregistrée et stock mis à jour.");
 
             } catch (Exception e) {
-                con.rollback();
+                con.rollback(); // ❌ annuler si problème
                 throw e;
             }
         }
     }
 }
 
-package dao;
-
-import util.DatabaseConnection;
-import java.sql.*;
-
-public class VenteDAO {
 
     public void afficherVentes() {
 
