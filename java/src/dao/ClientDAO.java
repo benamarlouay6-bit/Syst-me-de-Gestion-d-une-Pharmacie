@@ -1,23 +1,37 @@
 package dao;
 
-import model.Client;
-import util.DatabaseConnection;
-
+import ui.utils.DatabaseConnection;
 import java.sql.*;
 
 public class ClientDAO {
 
-    public void ajouterClient(Client c) throws SQLException {
-        String sql = "INSERT INTO client (nom, telephone, cin) VALUES (?, ?, ?)";
-        Connection con = DatabaseConnection.getConnection();
-        PreparedStatement ps = con.prepareStatement(sql);
+    public int getOrCreateClientByCin(String cin) throws SQLException {
 
-        ps.setString(1, c.getNom());
-        ps.setString(2, c.getTelephone());
-        ps.setString(3, c.getCin());
+        String check = "SELECT idClient FROM client WHERE cin = ?";
+        String insert = "INSERT INTO client (nom, cin) VALUES (?, ?)";
 
-        ps.executeUpdate();
-        ps.close();
-        con.close();
+        try (Connection con = DatabaseConnection.getConnection()) {
+
+            try (PreparedStatement ps = con.prepareStatement(check)) {
+                ps.setString(1, cin);
+                ResultSet rs = ps.executeQuery();
+
+                if (rs.next()) {
+                    return rs.getInt("idClient");
+                }
+            }
+
+            try (PreparedStatement ps =
+                         con.prepareStatement(insert, Statement.RETURN_GENERATED_KEYS)) {
+
+                ps.setString(1, "Client " + cin);
+                ps.setString(2, cin);
+                ps.executeUpdate();
+
+                ResultSet keys = ps.getGeneratedKeys();
+                keys.next();
+                return keys.getInt(1);
+            }
+        }
     }
 }
