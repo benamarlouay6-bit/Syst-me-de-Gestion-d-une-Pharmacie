@@ -42,7 +42,7 @@ CREATE TABLE commandeFournisseur (
     quantite INT NOT NULL,
     montantTotal DOUBLE NOT NULL,
     etat VARCHAR(30) NOT NULL
-        CHECK (etat IN ('EN_COURS', 'RECUE', 'ANNULEE')),
+        CHECK (etat IN ('EN_ATTENTE', 'RECUE', 'ANNULEE')),
     idFournisseur INT NOT NULL,
     idProduit INT NOT NULL,
 
