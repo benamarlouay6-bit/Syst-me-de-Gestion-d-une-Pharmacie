@@ -7,6 +7,14 @@ public class Produit {
     private double prixC;
     private int quantiteStock;
     private int seuilAlerte;
+    public Produit(String nom,double prixF,double prixC,int quantiteStock,int seuilAlerte)
+    {
+    	this.nom=nom;
+    	this.prixF=prixF;
+    	this.prixC=prixC;
+    	this.quantiteStock=quantiteStock;
+    	this.seuilAlerte=seuilAlerte;
+    }
 
     public int getIdProduit() { return idProduit; }
     public void setIdProduit(int idProduit) { this.idProduit = idProduit; }
