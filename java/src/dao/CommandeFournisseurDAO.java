@@ -2,42 +2,30 @@ package dao;
 
 import model.CommandeFournisseur;
 import util.DatabaseConnection;
+import exceptions.FournisseurNotFoundException;
+import exceptions.MedicamentNotFoundException;
 
 import java.sql.*;
 
 public class CommandeFournisseurDAO {
+    
 
-
-    private double getPrixFournisseur(int idProduit, int idFournisseur, Connection con)
-        throws SQLException, FournisseurNotFoundException {
-
-    String sql = "SELECT prix_fournisseur FROM produit WHERE idProduit = ? AND idFournisseur = ?";
-
-    try (PreparedStatement ps = con.prepareStatement(sql)) {
-        ps.setInt(1, idProduit);
-        ps.setInt(2, idFournisseur);
-
-        try (ResultSet rs = ps.executeQuery()) {
-            if (rs.next()) {
-                return rs.getDouble("prix_fournisseur");
-            }
-        }
-    }
-
-    throw new FournisseurNotFoundException(
-        "Aucun fournisseur trouvé (idFournisseur=" + idFournisseur +
-        ") pour le produit idProduit=" + idProduit
-    );
-}
-
-   import exceptions.FournisseurNotFoundException;
-import java.sql.*;
 
 public void creerCommande(CommandeFournisseur c)
-        throws FournisseurNotFoundException {
+        throws FournisseurNotFoundException, MedicamentNotFoundException {
 
-    String insertCommande = "INSERT INTO commandefournisseur " +
-        "(dateCommande, quantite, montantTotal, etat, idFournisseur, idProduit) " +
+    String sqlCheckFournisseur =
+        "SELECT idFournisseur FROM fournisseur WHERE idFournisseur = ?";
+
+    String sqlCheckMedicament =
+        "SELECT fm.prixFournisseur " +
+        "FROM medicament m " +
+        "JOIN fournisseur_medicament fm ON m.idMedicament = fm.idMedicament " +
+        "WHERE m.nom = ? AND fm.idFournisseur = ?";
+
+    String sqlInsert =
+        "INSERT INTO commandefournisseur " +
+        "(dateCommande, quantite, montantTotal, etat, idFournisseur, nomMedicament) " +
         "VALUES (?, ?, ?, ?, ?, ?)";
 
     try (Connection con = DatabaseConnection.getConnection()) {
@@ -46,42 +34,74 @@ public void creerCommande(CommandeFournisseur c)
 
         try {
 
-            
-            double prixFournisseur = getPrixFournisseur(
-                    c.getIdProduit(),
-                    c.getIdFournisseur(),
-                    con
-            );
+            // 1️⃣ Vérifier fournisseur
+            try (PreparedStatement psF = con.prepareStatement(sqlCheckFournisseur)) {
+                psF.setInt(1, c.getIdFournisseur());
+                ResultSet rsF = psF.executeQuery();
 
-            
-            double montantTotal = c.getQuantite() * prixFournisseur;
-
-            
-            try (PreparedStatement ps = con.prepareStatement(insertCommande)) {
-
-                ps.setDate(1, c.getDateCommande());
-                ps.setInt(2, c.getQuantite());
-                ps.setDouble(3, montantTotal);
-                ps.setString(4, c.getEtat());
-                ps.setInt(5, c.getIdFournisseur());
-                ps.setInt(6, c.getIdProduit());
-
-                ps.executeUpdate();
+                if (!rsF.next()) {
+                    throw new FournisseurNotFoundException(
+                        "Fournisseur introuvable (id=" + c.getIdFournisseur() + ")"
+                    );
+                }
             }
 
-            con.commit(); 
-            System.out.println("Commande fournisseur créée avec succès !");
+            // 2️⃣ Vérifier médicament + récupérer prix
+            double prixFournisseur;
 
-        } catch (SQLException | FournisseurNotFoundException e) {
-            con.rollback(); 
+            try (PreparedStatement psM = con.prepareStatement(sqlCheckMedicament)) {
+                psM.setString(1, c.getNom_medicamment());
+                psM.setInt(2, c.getIdFournisseur());
+
+                ResultSet rsM = psM.executeQuery();
+
+                if (!rsM.next()) {
+                    throw new MedicamentNotFoundException(
+                        "Le médicament '" + c.getNom_medicamment() +
+                        "' n'est pas fourni par ce fournisseur."
+                    );
+                }
+
+                prixFournisseur = rsM.getDouble("prixFournisseur");
+            }
+
+            // 3️⃣ Calcul du montant total
+            double montantTotal = c.getQuantite() * prixFournisseur;
+            c.setMontantTotal(montantTotal);
+
+            // 4️⃣ Insertion commande (avec nomMedicament)
+            try (PreparedStatement psInsert = con.prepareStatement(sqlInsert)) {
+                psInsert.setDate(1, c.getDateCommande());
+                psInsert.setInt(2, c.getQuantite());
+                psInsert.setDouble(3, montantTotal);
+                psInsert.setString(4, c.getEtat());
+                psInsert.setInt(5, c.getIdFournisseur());
+                psInsert.setString(6, c.getNom_medicamment());
+
+                psInsert.executeUpdate();
+            }
+
+            con.commit();
+            System.out.println("✅ Commande fournisseur créée avec succès.");
+
+        } catch (Exception e) {
+            con.rollback(); // ❌ annulation si erreur
             throw e;
         }
 
     } catch (SQLException e) {
-        System.err.println("Erreur SQL lors de la création de la commande");
         e.printStackTrace();
     }
 }
+
+
+
+    
+   
+   
+
+            
+    
 
 
     public void modifierCommande(CommandeFournisseur c) {
