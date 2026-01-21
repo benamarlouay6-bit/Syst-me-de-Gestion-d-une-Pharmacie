@@ -1,0 +1,161 @@
+package ui.view;
+
+import dao.CommandeFournisseurDAO;
+import exception.AnnulationCommandeImpossibleException;
+import exception.ReceptionCommandeImpossibleException;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
+import model.CommandeFournisseur;
+import ui.utils.DatabaseConnection;
+
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.Statement;
+
+public class ListeCommandeFournisseurView {
+
+    private TableView<CommandeFournisseur> table = new TableView<>();
+    private CommandeFournisseurDAO dao = new CommandeFournisseurDAO();
+
+    public void start(Stage stage) {
+
+        Label title = new Label("Liste des Commandes Fournisseur");
+        title.getStyleClass().add("title");
+
+        
+        TableColumn<CommandeFournisseur, Integer> colId =
+                new TableColumn<>("ID");
+        colId.setCellValueFactory(new PropertyValueFactory<>("idCommande"));
+
+        TableColumn<CommandeFournisseur, String> colDate =
+                new TableColumn<>("Date");
+        colDate.setCellValueFactory(new PropertyValueFactory<>("dateCommande"));
+
+        TableColumn<CommandeFournisseur, Integer> colQte =
+                new TableColumn<>("Quantité");
+        colQte.setCellValueFactory(new PropertyValueFactory<>("quantite"));
+
+        TableColumn<CommandeFournisseur, Double> colMontant =
+                new TableColumn<>("Montant");
+        colMontant.setCellValueFactory(new PropertyValueFactory<>("montantTotal"));
+
+        TableColumn<CommandeFournisseur, String> colEtat =
+                new TableColumn<>("État");
+        colEtat.setCellValueFactory(new PropertyValueFactory<>("etat"));
+
+        TableColumn<CommandeFournisseur, Integer> colFournisseur =
+                new TableColumn<>("ID Fournisseur");
+        colFournisseur.setCellValueFactory(new PropertyValueFactory<>("idFournisseur"));
+
+        TableColumn<CommandeFournisseur, String> colMed =
+                new TableColumn<>("Médicament");
+        colMed.setCellValueFactory(new PropertyValueFactory<>("nom_medicamment"));
+
+        table.getColumns().addAll(
+                colId, colDate, colQte, colMontant, colEtat, colFournisseur, colMed
+        );
+
+        loadCommandes();
+
+        
+        Button btnAnnuler = new Button("Annuler Commande");
+        Button btnReception = new Button("Réceptionner Commande");
+        Button btnRetour = new Button("Retour");
+
+        btnAnnuler.setOnAction(e -> annulerCommande());
+        btnReception.setOnAction(e -> receptionnerCommande());
+        btnRetour.setOnAction(e -> new CommandeFournisseurView().start(stage));
+
+        HBox actions = new HBox(15, btnAnnuler, btnReception, btnRetour);
+
+        VBox root = new VBox(20, title, table, actions);
+        root.getStyleClass().add("container");
+
+        Scene scene = new Scene(root, 900, 500);
+        scene.getStylesheets().add("/css/style.css");
+
+        stage.setScene(scene);
+        stage.setTitle("Commandes Fournisseur");
+        stage.show();
+    }
+
+    
+    private void loadCommandes() {
+        ObservableList<CommandeFournisseur> list = FXCollections.observableArrayList();
+
+        try (Connection con = DatabaseConnection.getConnection();
+             Statement st = con.createStatement();
+             ResultSet rs = st.executeQuery("SELECT * FROM commandefournisseur")) {
+
+            while (rs.next()) {
+                CommandeFournisseur c = new CommandeFournisseur(
+                        rs.getDate("dateCommande"),
+                        rs.getInt("quantite"),
+                        rs.getInt("idFournisseur"),
+                        rs.getString("nom_medicamment")
+                );
+
+                c.setIdCommande(rs.getInt("idCommande"));
+                c.setMontantTotal(rs.getDouble("montantTotal"));
+                c.setEtat(rs.getString("etat"));
+
+                list.add(c);
+            }
+
+            table.setItems(list);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+   
+    private void annulerCommande() {
+        CommandeFournisseur c = table.getSelectionModel().getSelectedItem();
+
+        if (c == null) {
+            showAlert("Erreur", "Veuillez sélectionner une commande.");
+            return;
+        }
+
+        try {
+            dao.annulerCommande(c.getIdCommande());
+            loadCommandes();
+            showAlert("Succès", "Commande annulée.");
+        } catch (AnnulationCommandeImpossibleException e) {
+            showAlert("Erreur", e.getMessage());
+        }
+    }
+
+    private void receptionnerCommande() {
+        CommandeFournisseur c = table.getSelectionModel().getSelectedItem();
+
+        if (c == null) {
+            showAlert("Erreur", "Veuillez sélectionner une commande.");
+            return;
+        }
+
+        try {
+            dao.receptionCommande(c.getIdCommande());
+            loadCommandes();
+            showAlert("Succès", "Commande réceptionnée.");
+        } catch (ReceptionCommandeImpossibleException e) {
+            showAlert("Erreur", e.getMessage());
+        }
+    }
+
+    
+    private void showAlert(String title, String msg) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(msg);
+        alert.showAndWait();
+    }
+}
