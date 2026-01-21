@@ -1,0 +1,136 @@
+package ui.view;
+
+import dao.FournisseurDAO;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
+import model.Fournisseur;
+
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import ui.utils.DatabaseConnection;
+
+public class ListeFournisseurView {
+
+    private TableView<Fournisseur> table = new TableView<>();
+
+    public void start(Stage stage) {
+
+        Label title = new Label("Liste des Fournisseurs");
+        title.getStyleClass().add("title");
+
+        TableColumn<Fournisseur, Integer> colId =
+                new TableColumn<>("ID");
+        colId.setCellValueFactory(
+                new PropertyValueFactory<>("id")
+        );
+
+        TableColumn<Fournisseur, String> colNom =
+                new TableColumn<>("Nom");
+        colNom.setCellValueFactory(
+                new PropertyValueFactory<>("nom")
+        );
+
+        TableColumn<Fournisseur, String> colTel =
+                new TableColumn<>("Téléphone");
+        colTel.setCellValueFactory(
+                new PropertyValueFactory<>("telephone")
+        );
+
+        TableColumn<Fournisseur, String> colMail =
+                new TableColumn<>("Email");
+        colMail.setCellValueFactory(
+                new PropertyValueFactory<>("mail")
+        );
+
+        table.getColumns().addAll(colId, colNom, colTel, colMail);
+        loadFournisseurs();
+
+        Button btnAdd = new Button("Ajouter Fournisseur");
+        Button btnBack = new Button("Retour");
+
+        btnAdd.setOnAction(e -> showAddDialog());
+        btnBack.setOnAction(e -> new FournisseurView().start(stage));
+
+        HBox actions = new HBox(15, btnAdd, btnBack);
+
+        VBox root = new VBox(20, title, table, actions);
+        root.getStyleClass().add("container");
+
+        Scene scene = new Scene(root, 700, 450);
+        scene.getStylesheets().add("/css/style.css");
+
+        stage.setScene(scene);
+        stage.setTitle("Fournisseurs");
+        stage.show();
+    }
+
+    private void loadFournisseurs() {
+        ObservableList<Fournisseur> list =
+                FXCollections.observableArrayList();
+
+        try (Connection con = DatabaseConnection.getConnection();
+             Statement st = con.createStatement();
+             ResultSet rs = st.executeQuery("SELECT * FROM fournisseur")) {
+
+            while (rs.next()) {
+                Fournisseur f = new Fournisseur(
+                		rs.getInt("id"),
+                        rs.getString("nom"),
+                        rs.getString("telephone"),
+                        rs.getString("mail")
+                );
+                list.add(f);
+            }
+
+            table.setItems(list);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void showAddDialog() {
+
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("Ajouter Fournisseur");
+
+        TextField txtNom = new TextField();
+        TextField txtTel = new TextField();
+        TextField txtMail = new TextField();
+
+        VBox content = new VBox(
+                10,
+                new Label("Nom"), txtNom,
+                new Label("Téléphone"), txtTel,
+                new Label("Email"), txtMail
+        );
+
+        dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().getButtonTypes()
+                .addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        dialog.showAndWait().ifPresent(btn -> {
+            if (btn == ButtonType.OK) {
+                try {
+                    Fournisseur f = new Fournisseur(
+                            
+                            txtNom.getText(),
+                            txtTel.getText(),
+                            txtMail.getText()
+                    );
+                    new FournisseurDAO().ajouterFournisseur(f);
+                    loadFournisseurs();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
+}
