@@ -1,0 +1,10 @@
+package exception;
+
+public class ReceptionCommandeImpossibleException extends Exception{
+	public ReceptionCommandeImpossibleException(String msg)
+	{
+		super(msg);
+	}
+	
+
+}
