@@ -1,28 +1,105 @@
 package ui.view;
 
+import dao.RapportDAO;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
+import java.sql.ResultSet;
+
 public class ReportView {
+
+    private TextArea output = new TextArea();
 
     public void start(Stage stage) {
 
-        Label title = new Label("Rapports (Admin)");
+        Label title = new Label("Rapports & Analyses");
         title.getStyleClass().add("title");
 
-        Button btnBack = new Button("Retour");
-        btnBack.setOnAction(e -> new MenuView().start(stage));
+        Button btnStock = new Button("État des stocks");
+        Button btnCA = new Button("Chiffre d'affaires");
+        Button btnPerf = new Button("Performance des fournisseurs");
+        Button btnRetour = new Button("Retour au menu");
 
-        VBox root = new VBox(15, title, btnBack);
+        output.setEditable(false);
+        output.setPrefHeight(250);
+
+        btnStock.setOnAction(e -> afficherStocks());
+        btnCA.setOnAction(e -> afficherChiffreAffaires());
+        btnPerf.setOnAction(e -> afficherPerformance());
+        btnRetour.setOnAction(e -> new MenuView().start(stage));
+
+        VBox root = new VBox(15,
+                title,
+                btnStock,
+                btnCA,
+                btnPerf,
+                output,
+                btnRetour
+        );
+
         root.getStyleClass().add("container");
 
-        Scene scene = new Scene(root, 400, 300);
+        Scene scene = new Scene(root, 600, 500);
         scene.getStylesheets().add("/css/style.css");
 
-        stage.setScene(scene);
         stage.setTitle("Rapports");
+        stage.setScene(scene);
         stage.show();
+    }
+
+    
+
+    private void afficherStocks() {
+        output.clear();
+        output.appendText(" ÉTAT DES STOCKS\n\n");
+
+        try {
+            ResultSet rs = new RapportDAO().etatStocks();
+
+            while (rs.next()) {
+                output.appendText(
+                    "Produit : " + rs.getString("nom") +
+                    " | Stock : " + rs.getInt("quantiteStock") +
+                    " | Seuil : " + rs.getInt("seuilAlerte") + "\n"
+                );
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void afficherChiffreAffaires() {
+        output.clear();
+        output.appendText(" CHIFFRE D'AFFAIRES\n\n");
+
+        try {
+            double ca = new RapportDAO().chiffreAffaires();
+            output.appendText("Chiffre d'affaires total : " + ca + " DT\n");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void afficherPerformance() {
+        output.clear();
+        output.appendText(" PERFORMANCE DES FOURNISSEURS\n\n");
+
+        try {
+            ResultSet rs = new RapportDAO().performanceFournisseurs();
+
+            while (rs.next()) {
+                output.appendText(
+                    rs.getString("nom") +
+                    " → " +
+                    rs.getDouble("total") + " DT\n"
+                );
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
