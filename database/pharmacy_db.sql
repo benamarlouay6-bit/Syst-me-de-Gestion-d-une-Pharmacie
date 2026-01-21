@@ -63,7 +63,7 @@ CREATE TABLE commandeFournisseur (
     etat VARCHAR(30) NOT NULL
         CHECK (etat IN ('EN_ATTENTE', 'RECUE', 'ANNULEE')),
     idFournisseur INT NOT NULL,
-    nom_medicamment INT NOT NULL,
+    nom_medicamment VARCHAR(30) NOT NULL,
 
     CONSTRAINT fk_commande_fournisseur
         FOREIGN KEY (idFournisseur) REFERENCES fournisseur(id),
@@ -77,7 +77,7 @@ CREATE TABLE vente (
     dateVente DATE NOT NULL,
     quantite INT NOT NULL,
     montantTotal DOUBLE NOT NULL,
-    idClient INT NOT NULL,
+    nom_medicamment VARCHAR(30) NOT NULL,
     idProduit INT NOT NULL,
 
     CONSTRAINT fk_vente_client
