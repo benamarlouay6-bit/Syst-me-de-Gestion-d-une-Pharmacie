@@ -5,6 +5,13 @@ public class Client {
     private String nom;
     private String telephone;
     private String cin;
+    public Client(int idClient,String nom,String telephone,String cin)
+    {
+        this.idClient=idCleint;
+        this.nom=nom;
+        this.telephone=telephone;
+        this.cin=cin;
+    }
 
     public int getIdClient() { return idClient; }
     public void setIdClient(int idClient) { this.idClient = idClient; }
