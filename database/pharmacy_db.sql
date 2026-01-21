@@ -77,11 +77,11 @@ CREATE TABLE vente (
     quantite INT NOT NULL,
     montantTotal DOUBLE NOT NULL,
     nom_medicamment VARCHAR(30) NOT NULL,
-    idProduit INT NOT NULL,
+    idClient INT NOT NULL,
+    
 
     CONSTRAINT fk_vente_client
         FOREIGN KEY (idClient) REFERENCES client(idClient),
 
-    CONSTRAINT fk_vente_produit
-        FOREIGN KEY (idProduit) REFERENCES produit(idProduit)
+   
 );
