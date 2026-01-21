@@ -5,6 +5,12 @@ public class Fournisseur {
     private String nom;
     private String telephone;
     private String mail;
+    Fournisseur(int id, String nom, String telephone, String mail){
+        this.id=id
+        this.nom=nom
+        this.telephone=telephone
+        this.mail=mail
+            }
 
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
