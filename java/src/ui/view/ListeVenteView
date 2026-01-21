@@ -1,0 +1,104 @@
+package ui.view;
+
+import dao.VenteDAO;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
+import model.Vente;
+
+import java.sql.ResultSet;
+
+public class ListeVenteView {
+
+    private TableView<Vente> table = new TableView<>();
+
+    public void start(Stage stage) {
+
+        Label title = new Label("Liste des Ventes");
+        title.getStyleClass().add("title");
+
+        TableColumn<Vente, Integer> colId =
+                new TableColumn<>("ID");
+        colId.setCellValueFactory(
+                new PropertyValueFactory<>("idVente")
+        );
+
+        TableColumn<Vente, String> colDate =
+                new TableColumn<>("Date");
+        colDate.setCellValueFactory(
+                new PropertyValueFactory<>("dateVente")
+        );
+
+        TableColumn<Vente, Integer> colQte =
+                new TableColumn<>("Quantité");
+        colQte.setCellValueFactory(
+                new PropertyValueFactory<>("quantite")
+        );
+
+        TableColumn<Vente, Double> colMontant =
+                new TableColumn<>("Montant");
+        colMontant.setCellValueFactory(
+                new PropertyValueFactory<>("montantTotal")
+        );
+
+        TableColumn<Vente, String> colMed =
+                new TableColumn<>("Médicament");
+        colMed.setCellValueFactory(
+                new PropertyValueFactory<>("nom_medicamment")
+        );
+
+        TableColumn<Vente, Integer> colClient =
+                new TableColumn<>("ID Client");
+        colClient.setCellValueFactory(
+                new PropertyValueFactory<>("idClient")
+        );
+
+        table.getColumns().addAll(
+                colId, colDate, colQte, colMontant, colMed, colClient
+        );
+
+        loadVentes();
+
+        Button btnRetour = new Button("Retour");
+        btnRetour.setOnAction(e -> new SaleView().start(stage));
+
+        VBox root = new VBox(20, title, table, btnRetour);
+        root.getStyleClass().add("container");
+
+        Scene scene = new Scene(root, 800, 500);
+        scene.getStylesheets().add("/css/style.css");
+
+        stage.setTitle("Ventes");
+        stage.setScene(scene);
+        stage.show();
+    }
+
+    private void loadVentes() {
+        ObservableList<Vente> list = FXCollections.observableArrayList();
+
+        try {
+            ResultSet rs = new VenteDAO().getAllVentes();
+
+            while (rs.next()) {
+                Vente v = new Vente(
+                        rs.getInt("idVente"),
+                        rs.getDate("dateVente"),
+                        rs.getInt("quantite"),
+                        rs.getDouble("montantTotal"),
+                        rs.getString("nom_medicamment"),
+                        rs.getInt("idClient")
+                );
+                list.add(v);
+            }
+
+            table.setItems(list);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
