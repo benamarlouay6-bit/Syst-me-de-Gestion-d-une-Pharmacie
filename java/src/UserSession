@@ -1,0 +1,24 @@
+package model;
+
+public class UserSession {
+
+    private static String role;
+    private static String nom;
+
+    public UserSession(String role, String nom) {
+        UserSession.role = role;
+        UserSession.nom = nom;
+    }
+
+    public static String getRole() {
+        return role;
+    }
+
+    public static boolean isAdmin() {
+        return "ADMIN".equals(role);
+    }
+
+    public static String getNom() {
+        return nom;
+    }
+}
