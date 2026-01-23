@@ -32,4 +32,15 @@ public class Produit {
 
     public int getSeuilAlerte() { return seuilAlerte; }
     public void setSeuilAlerte(int seuilAlerte) { this.seuilAlerte = seuilAlerte; }
+    public boolean estInferieurAuSeuil() {
+        return quantiteStock < seuilAlerte;
+    }
+    public String getEtatStock() {
+        return estInferieurAuSeuil() ? " Stock bas" : "OK";
+    }
+    public boolean alerteStockBas() {
+        return quantiteStock < seuilAlerte;
+    }
+
+
 }
