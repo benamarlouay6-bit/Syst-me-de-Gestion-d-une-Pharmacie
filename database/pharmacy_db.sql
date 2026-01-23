@@ -2,16 +2,29 @@ create database pharma;
 use pharma;
 
 
+
+
 CREATE TABLE employe (
     idEmploye INT AUTO_INCREMENT PRIMARY KEY,
-    nom VARCHAR(100) NOT NULL
+    nom VARCHAR(100) NOT NULL,
+    telephone VARCHAR(20) NOT NULL
 );
+
 
 CREATE TABLE administrateur (
     idAdministrateur INT AUTO_INCREMENT PRIMARY KEY,
     nom VARCHAR(100) NOT NULL
 );
+ALTER TABLE administrateur 
+ADD login VARCHAR(50), 
+ADD password VARCHAR(50);
 
+ALTER TABLE employe 
+ADD login VARCHAR(50), 
+ADD password VARCHAR(50);
+
+ALTER TABLE administrateur DROP password;
+ALTER TABLE employe DROP password;
 
 CREATE TABLE produit (
     idProduit INT AUTO_INCREMENT PRIMARY KEY,
