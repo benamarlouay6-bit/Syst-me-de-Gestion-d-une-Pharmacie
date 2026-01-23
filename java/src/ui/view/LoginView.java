@@ -1,79 +1,75 @@
 package ui.view;
 
-import javafx.application.Application;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.PasswordField;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import ui.utils.Session;
+import model.AuthService;
 
-public class LoginView extends Application {
+public class LoginView {
 
-    @Override
     public void start(Stage stage) {
 
-        
-        Label title = new Label("Connexion - Pharmacie");
+        Label title = new Label("Connexion");
         title.getStyleClass().add("title");
 
-        
-        TextField loginField = new TextField();
-        loginField.setPromptText("Login");
+        TextField txtNom = new TextField();
+        txtNom.setPromptText("Nom");
 
-        PasswordField passwordField = new PasswordField();
-        passwordField.setPromptText("Mot de passe");
+        TextField txtLogin = new TextField();
+        txtLogin.setPromptText("Login");
 
-        
+        PasswordField txtPassword = new PasswordField();
+        txtPassword.setPromptText("Mot de passe");
+
         Button btnLogin = new Button("Se connecter");
 
-        
         btnLogin.setOnAction(e -> {
 
-            
-            if (passwordField.getText().equals("eyaeya2")) {
+            String nom = txtNom.getText().trim();
+            String login = txtLogin.getText().trim();
+            String password = txtPassword.getText().trim();
 
-                
-                if (loginField.getText().equalsIgnoreCase("admin")) {
-                    Session.setRole("ADMIN");
-                } else {
-                    Session.setRole("EMPLOYE");
-                }
-
-                
-                new MenuView().start(stage);
-
-            } else {
-                new Alert(
-                        Alert.AlertType.ERROR,
-                        "Mot de passe incorrect"
-                ).show();
+            if (nom.isEmpty() || password.isEmpty()) {
+                show("Nom et mot de passe obligatoires");
+                return;
             }
+
+            AuthService auth = new AuthService();
+            boolean ok = auth.login(nom, login, password);
+
+            if (!ok) {
+                show("Informations incorrectes");
+                return;
+            }
+
+            new MenuView().start(stage);
         });
 
-        
-        VBox root = new VBox(15);
-        root.getChildren().addAll(
+
+        VBox root = new VBox(
+                15,
                 title,
-                loginField,
-                passwordField,
+                txtNom,      
+                txtLogin,
+                txtPassword,
                 btnLogin
         );
+
         root.getStyleClass().add("container");
 
-        
-        Scene scene = new Scene(root, 350, 250);
+        Scene scene = new Scene(root, 360, 320);
         scene.getStylesheets().add("/css/style.css");
 
         stage.setScene(scene);
         stage.setTitle("Login");
-        stage.show();
-    }
+        stage.show();}
+    
 
-    public static void main(String[] args) {
-        launch(args);
-    }
+    private void show(String msg) {
+        Alert a = new Alert(Alert.AlertType.ERROR);
+        a.setHeaderText(null);
+        a.setContentText(msg);}
+    
+    
 }
