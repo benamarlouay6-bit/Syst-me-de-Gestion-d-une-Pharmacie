@@ -1,0 +1,151 @@
+package dao;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import model.Employe;
+import exception.EmployeNotFoundException;
+
+
+public class EmployeDAO {
+
+    //te permet de voir liste des employes;
+    public ObservableList<Employe> getAll() {
+        ObservableList<Employe> list = FXCollections.observableArrayList();
+        String sql = "SELECT * FROM employe";
+
+        try (Connection cn = DatabaseConnection.getConnection();
+             PreparedStatement ps = cn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                list.add(new Employe(
+                        rs.getInt("idEmploye"),
+                        rs.getString("nom"),
+                        rs.getString("telephone")
+                ));
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    //si tu veux ajouter des employes;
+    public void ajouter(String nom, String telephone) {
+        String sql = "INSERT INTO employe(nom, telephone) VALUES(?, ?)";
+
+        try (Connection cn = DatabaseConnection.getConnection();
+             PreparedStatement ps = cn.prepareStatement(sql)) {
+
+            ps.setString(1, nom);
+            ps.setString(2, telephone);
+            ps.executeUpdate();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    //si tu veux modifier les donnees d un employes;
+    public void modifier(int id, String nom, String telephone) {
+        String sql = "UPDATE employe SET nom=?, telephone=? WHERE idEmploye=?";
+
+        try (Connection cn = DatabaseConnection.getConnection();
+             PreparedStatement ps = cn.prepareStatement(sql)) {
+
+            ps.setString(1, nom);
+            ps.setString(2, telephone);
+            ps.setInt(3, id);
+            ps.executeUpdate();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    //pour supprimer un employe;
+    public void supprimer(int id) {
+        String sql = "DELETE FROM employe WHERE idEmploye=?";
+
+        try (Connection cn = DatabaseConnection.getConnection();
+             PreparedStatement ps = cn.prepareStatement(sql)) {
+
+            ps.setInt(1, id);
+            ps.executeUpdate();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    //on recherche un employe;
+    public ObservableList<Employe> chercher(String mot) throws EmployeNotFoundException {
+
+        ObservableList<Employe> list = FXCollections.observableArrayList();
+        String sql = "SELECT * FROM employe WHERE nom LIKE ? OR telephone LIKE ?";
+
+        try (Connection cn = DatabaseConnection.getConnection();
+             PreparedStatement ps = cn.prepareStatement(sql)) {
+
+            ps.setString(1, "%" + mot + "%");
+            ps.setString(2, "%" + mot + "%");
+
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                list.add(new Employe(
+                        rs.getInt("idEmploye"),
+                        rs.getString("nom"),
+                        rs.getString("telephone")
+                ));
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        
+        if (list.isEmpty()) {
+            throw new EmployeNotFoundException(
+                    "Aucun employé trouvé pour : " + mot
+            );
+        }
+
+        return list;
+    }
+    public Employe findByNom(String nom) {
+
+        String sql = "SELECT * FROM employe WHERE LOWER(nom) = LOWER(?)";
+
+        try (Connection cn = DatabaseConnection.getConnection();
+             PreparedStatement ps = cn.prepareStatement(sql)) {
+
+            ps.setString(1, nom.trim());
+
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return new Employe(
+                        rs.getInt("idEmploye"),
+                        rs.getString("nom"),
+                        rs.getString("telephone")
+                );
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+
+
+
+}
