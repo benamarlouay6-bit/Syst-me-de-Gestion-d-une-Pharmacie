@@ -125,7 +125,7 @@ public class ListeFournisseurView {
                             txtTel.getText(),
                             txtMail.getText()
                     );
-                    new FournisseurDAO().ajouterFournisseur(f);
+                    new FournisseurDAO().ajouter(f);
                     loadFournisseurs();
                 } catch (Exception e) {
                     e.printStackTrace();
