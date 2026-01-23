@@ -1,0 +1,87 @@
+package dao;
+
+import model.Administrateur;
+import java.sql.*;
+
+public class AdministrateurDAO {
+
+    
+    public Administrateur findById(int id) {
+
+        String sql = "SELECT * FROM administrateur WHERE idAdministrateur=?";
+
+        try (Connection cn = DatabaseConnection.getConnection();
+             PreparedStatement ps = cn.prepareStatement(sql)) {
+
+            ps.setInt(1, id);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return new Administrateur(
+                        rs.getInt("idAdministrateur"),
+                        rs.getString("nom")
+                );
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return null; // admin non trouvé
+    }
+
+    
+    public Administrateur findByNom(String nom) {
+
+        String sql = "SELECT * FROM administrateur WHERE nom=?";
+
+        try (Connection cn = DatabaseConnection.getConnection();
+             PreparedStatement ps = cn.prepareStatement(sql)) {
+
+            ps.setString(1, nom);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return new Administrateur(
+                        rs.getInt("idAdministrateur"),
+                        rs.getString("nom")
+                );
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+    public Administrateur findByLoginAndNom(String login, String nom) {
+
+        String sql = "SELECT * FROM administrateur WHERE login=? AND nom=?";
+
+        try (Connection cn = DatabaseConnection.getConnection();
+             PreparedStatement ps = cn.prepareStatement(sql)) {
+
+            ps.setString(1, login);
+            ps.setString(2, nom);
+
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return new Administrateur(
+                        rs.getInt("idAdministrateur"),
+                        rs.getString("nom")
+                );
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+
+
+
+
+}
