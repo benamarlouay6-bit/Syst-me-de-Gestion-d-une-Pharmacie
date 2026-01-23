@@ -13,10 +13,9 @@ public class CommandeFournisseur {
     private int idFournisseur;
     private String nom_medicamment;
     private int idCommande;
-
     
-
-    public CommandeFournisseur(Date dateCommande, int quantite,int idFournisseur,String nom_medicamment){
+    public CommandeFournisseur(Date dateCommande, int quantite,int idFournisseur,String nom_medicamment)
+    {
         this.dateCommande = dateCommande;
         this.quantite = quantite;
         this.idFournisseur = idFournisseur;
