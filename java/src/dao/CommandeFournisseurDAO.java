@@ -1,284 +1,219 @@
 package dao;
 
 import model.CommandeFournisseur;
-import util.DatabaseConnection;
-import exceptions.FournisseurNotFoundException;
-import exceptions.MedicamentNotFoundException;
-import exceptions.AnnulationCommandeImpossibleException;
-import exceptions.ReceptionCommandeImpossibleException;
+import exception.FournisseurNotFoundException;
+import exception.MedicamentNotFoundException;
+import exception.AnnulationCommandeImpossibleException;
+import exception.ReceptionCommandeImpossibleException;
+import ui.utils.DatabaseConnection;
 
 import java.sql.*;
 
 public class CommandeFournisseurDAO {
-    
+	public ResultSet getAllCommandes() throws SQLException {
+	    String sql = "SELECT * FROM commandefournisseur";
+	    Connection con = DatabaseConnection.getConnection();
+	    Statement st = con.createStatement();
+	    return st.executeQuery(sql);
+	}
 
 
-public void creerCommande(CommandeFournisseur c)
-        throws FournisseurNotFoundException, MedicamentNotFoundException {
+    public void creerCommande(CommandeFournisseur c)
+            throws FournisseurNotFoundException, MedicamentNotFoundException {
 
-    String sqlCheckFournisseur =
-        "SELECT id FROM fournisseur WHERE id = ?";
+        String checkFournisseur =
+                "SELECT id FROM fournisseur WHERE id = ?";
 
-    String sqlCheckMedicament =
-        "SELECT fm.prixFournisseur " +
-        "FROM medicament m " +
-        "JOIN fournisseur_medicament fm ON m.idMedicament = fm.idMedicament " +
-        "WHERE m.nom = ? AND fm.idFournisseur = ?";
+        String checkMedicament =
+                "SELECT fm.prixFournisseur " +
+                "FROM medicament m " +
+                "JOIN fournisseur_medicament fm ON m.idMedicament = fm.idMedicament " +
+                "WHERE m.nom = ? AND fm.idFournisseur = ?";
 
-    String sqlInsert =
-        "INSERT INTO commandefournisseur " +
-        "(dateCommande, quantite, montantTotal, etat, idFournisseur, nomMedicament) " +
-        "VALUES (?, ?, ?, ?, ?, ?)";
+        String insertCommande =
+                "INSERT INTO commandefournisseur " +
+                "(dateCommande, quantite, montantTotal, etat, idFournisseur, nom_medicamment) " +
+                "VALUES (?, ?, ?, ?, ?, ?)";
 
-    try (Connection con = DatabaseConnection.getConnection()) {
+        try (Connection con = DatabaseConnection.getConnection()) {
+            con.setAutoCommit(false);
 
-        con.setAutoCommit(false); // 🔒 début transaction
-
-        try {
-
-            // 1️⃣ Vérifier fournisseur
-            try (PreparedStatement psF = con.prepareStatement(sqlCheckFournisseur)) {
-                psF.setInt(1, c.getIdFournisseur());
-                ResultSet rsF = psF.executeQuery();
-
-                if (!rsF.next()) {
-                    throw new FournisseurNotFoundException(
-                        "Fournisseur introuvable (id=" + c.getIdFournisseur() + ")"
-                    );
+            
+            try (PreparedStatement ps = con.prepareStatement(checkFournisseur)) {
+                ps.setInt(1, c.getIdFournisseur());
+                if (!ps.executeQuery().next()) {
+                    throw new FournisseurNotFoundException("Fournisseur introuvable");
                 }
             }
 
-            // 2️⃣ Vérifier médicament + récupérer prix
-            double prixFournisseur;
+            
+            double prix;
+            try (PreparedStatement ps = con.prepareStatement(checkMedicament)) {
+                ps.setString(1, c.getNom_medicamment());
+                ps.setInt(2, c.getIdFournisseur());
 
-            try (PreparedStatement psM = con.prepareStatement(sqlCheckMedicament)) {
-                psM.setString(1, c.getNom_medicamment());
-                psM.setInt(2, c.getIdFournisseur());
-
-                ResultSet rsM = psM.executeQuery();
-
-                if (!rsM.next()) {
+                ResultSet rs = ps.executeQuery();
+                if (!rs.next()) {
                     throw new MedicamentNotFoundException(
-                        "Le médicament '" + c.getNom_medicamment() +
-                        "' n'est pas fourni par ce fournisseur."
+                            "Ce fournisseur ne fournit pas ce médicament"
                     );
                 }
-
-                prixFournisseur = rsM.getDouble("prixFournisseur");
+                prix = rs.getDouble("prixFournisseur");
             }
 
-            // 3️⃣ Calcul du montant total
-            double montantTotal = c.getQuantite() * prixFournisseur;
-            c.setMontantTotal(montantTotal);
-
-            // 4️⃣ Insertion commande (avec nomMedicament)
-            try (PreparedStatement psInsert = con.prepareStatement(sqlInsert)) {
-                psInsert.setDate(1, c.getDateCommande());
-                psInsert.setInt(2, c.getQuantite());
-                psInsert.setDouble(3, montantTotal);
-                psInsert.setString(4, c.getEtat());
-                psInsert.setInt(5, c.getIdFournisseur());
-                psInsert.setString(6, c.getNom_medicamment());
-
-                psInsert.executeUpdate();
-            }
-
-            con.commit();
-            System.out.println("✅ Commande fournisseur créée avec succès.");
-
-        } catch (Exception e) {
-            con.rollback(); // ❌ annulation si erreur
-            throw e;
-        }
-
-    } catch (SQLException e) {
-        e.printStackTrace();
-    }
-}
-
-import exceptions.AnnulationCommandeImpossibleException;
-import java.sql.*;
-
-public void annulerCommande(int idCommande)
-        throws AnnulationCommandeImpossibleException {
-
-    String sqlCheckEtat =
-        "SELECT etat FROM commandefournisseur WHERE idCommande = ?";
-
-    String sqlAnnuler =
-        "UPDATE commandefournisseur SET etat = 'ANNULEE' WHERE idCommande = ?";
-
-    try (Connection con = DatabaseConnection.getConnection()) {
-
-        con.setAutoCommit(false); // 🔒 transaction
-
-        try {
-
-            String etatCommande;
-
-            // 1️⃣ Vérifier l'état de la commande
-            try (PreparedStatement psCheck = con.prepareStatement(sqlCheckEtat)) {
-                psCheck.setInt(1, idCommande);
-                ResultSet rs = psCheck.executeQuery();
-
-                if (!rs.next()) {
-                    throw new AnnulationCommandeImpossibleException(
-                        "Commande introuvable (id=" + idCommande + ")"
-                    );
-                }
-
-                etatCommande = rs.getString("etat");
-            }
-
-            // 2️⃣ Vérifier règle métier
-            if ("REÇUE".equalsIgnoreCase(etatCommande)) {
-                throw new AnnulationCommandeImpossibleException(
-                    "Annulation impossible : la commande est déjà reçue."
-                );
-            }
-
-            // 3️⃣ Annuler la commande
-            try (PreparedStatement psUpdate = con.prepareStatement(sqlAnnuler)) {
-                psUpdate.setInt(1, idCommande);
-                psUpdate.executeUpdate();
-            }
-
-            con.commit();
-            System.out.println("✅ Commande annulée avec succès.");
-
-        } catch (Exception e) {
-            con.rollback(); // ❌ annuler si erreur
-            throw e;
-        }
-
-    } catch (SQLException e) {
-        e.printStackTrace();
-    }
-}
-
-
-  
-
-
-
-
-public void receptionCommande(int idCommande)
-        throws ReceptionCommandeImpossibleException {
-
-    String sqlGetCommande =
-        "SELECT nom, quantite, etat " +
-        "FROM commandefournisseur WHERE idCommande = ?";
-
-    String sqlUpdateEtat =
-        "UPDATE commandefournisseur SET etat = 'REÇUE' WHERE idCommande = ?";
-
-    String sqlUpdateStock =
-        "UPDATE produit SET quantiteStock = quantiteStock + ? " +
-        "WHERE nomMedicament = ?";
-
-    try (Connection con = DatabaseConnection.getConnection()) {
-
-        con.setAutoCommit(false); // 🔒 transaction
-
-        try {
-
-            String nomMedicament;
-            int quantite;
-            String etat;
-
-            // 1️⃣ Récupérer la commande
-            try (PreparedStatement psCmd = con.prepareStatement(sqlGetCommande)) {
-                psCmd.setInt(1, idCommande);
-                ResultSet rs = psCmd.executeQuery();
-
-                if (!rs.next()) {
-                    throw new ReceptionCommandeImpossibleException(
-                        "Commande introuvable (id=" + idCommande + ")"
-                    );
-                }
-
-                nomMedicament = rs.getString("nomMedicament");
-                quantite = rs.getInt("quantite");
-                etat = rs.getString("etat");
-            }
-
-            // 2️⃣ Vérifier règles métier
-            if ("ANNULÉE".equalsIgnoreCase(etat)) {
-                throw new ReceptionCommandeImpossibleException(
-                    "Réception impossible : la commande est annulée."
-                );
-            }
-
-            if ("REÇUE".equalsIgnoreCase(etat)) {
-                throw new ReceptionCommandeImpossibleException(
-                    "Réception impossible : la commande est déjà reçue."
-                );
-            }
-
-            // 3️⃣ Mise à jour du stock (SI le produit existe → sinon rien)
-            try (PreparedStatement psStock = con.prepareStatement(sqlUpdateStock)) {
-                psStock.setInt(1, quantite);
-                psStock.setString(2, nomMedicament);
-                psStock.executeUpdate(); // ← aucune vérification, aucune exception
-            }
-
-            // 4️⃣ Mise à jour de l’état de la commande
-            try (PreparedStatement psEtat = con.prepareStatement(sqlUpdateEtat)) {
-                psEtat.setInt(1, idCommande);
-                psEtat.executeUpdate();
-            }
-
-            con.commit();
-            System.out.println("✅ Commande reçue. Stock mis à jour si le produit existe.");
-
-        } catch (Exception e) {
-            con.rollback(); // ❌ annuler si erreur
-            throw e;
-        }
-
-    } catch (SQLException e) {
-        e.printStackTrace();
-    }
-}
-
-  
-   
-   
+            double montant = prix * c.getQuantite();
+            c.setMontantTotal(montant);
 
             
-    
-
-
-   
-
-   
-
-    
-
-    
-            
-    
-    
-    public void rapportPerformanceFournisseurs() {
-        String sql = "SELECT idFournisseur, SUM(quantite) AS totalLivree " +
-                     "FROM commandefournisseur WHERE etat = 'RECUE' GROUP BY idFournisseur";
-
-        try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-
-            System.out.println("🚚 PERFORMANCE DES FOURNISSEURS :");
-
-            while (rs.next()) {
-                System.out.println(
-                    "Fournisseur ID: " + rs.getInt("idFournisseur") +
-                    " | Quantité livrée: " + rs.getInt("totalLivree")
-                );  // a afficher par eya :)
+            try (PreparedStatement ps = con.prepareStatement(insertCommande)) {
+                ps.setDate(1, c.getDateCommande());
+                ps.setInt(2, c.getQuantite());
+                ps.setDouble(3, montant);
+                ps.setString(4, c.getEtat());
+                ps.setInt(5, c.getIdFournisseur());
+                ps.setString(6, c.getNom_medicamment());
+                ps.executeUpdate();
             }
+
+            con.commit();
 
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
+    public void annulerCommande(int idCommande)
+            throws AnnulationCommandeImpossibleException {
+
+        String sqlCheckEtat =
+            "SELECT etat FROM commandefournisseur WHERE idCommande = ?";
+
+        String sqlAnnuler =
+            "UPDATE commandefournisseur SET etat = 'ANNULEE' WHERE idCommande = ?";
+
+        try (Connection con = DatabaseConnection.getConnection()) {
+
+            con.setAutoCommit(false); 
+
+            try {
+
+                String etatCommande;
+
+                
+                try (PreparedStatement psCheck = con.prepareStatement(sqlCheckEtat)) {
+                    psCheck.setInt(1, idCommande);
+                    ResultSet rs = psCheck.executeQuery();
+
+                    if (!rs.next()) {
+                        throw new AnnulationCommandeImpossibleException(
+                            "Commande introuvable (id=" + idCommande + ")"
+                        );
+                    }
+
+                    etatCommande = rs.getString("etat");
+                }
+
+                
+                if ("REÇUE".equalsIgnoreCase(etatCommande)) {
+                    throw new AnnulationCommandeImpossibleException(
+                        "Annulation impossible : la commande est déjà reçue."
+                    );
+                }
+
+               
+                try (PreparedStatement psUpdate = con.prepareStatement(sqlAnnuler)) {
+                    psUpdate.setInt(1, idCommande);
+                    psUpdate.executeUpdate();
+                }
+
+                con.commit();
+                System.out.println("Commande annulée avec succès.");
+
+            } catch (Exception e) {
+                con.rollback(); 
+                throw e;
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+    public void receptionCommande(int idCommande)
+            throws ReceptionCommandeImpossibleException {
+
+        String sqlGetCommande =
+            "SELECT nom_medicamment, quantite, etat " +
+            "FROM commandefournisseur WHERE idCommande = ?";
+
+        String sqlUpdateEtat =
+            "UPDATE commandefournisseur SET etat = 'RECUE' WHERE idCommande = ?";
+
+        String sqlUpdateStock =
+            "UPDATE produit SET quantiteStock = quantiteStock + ? " +
+            "WHERE nom = ?";
+
+        try (Connection con = DatabaseConnection.getConnection()) {
+
+            con.setAutoCommit(false);
+
+            try {
+
+                String nomMedicament;
+                int quantite;
+                String etat;
+
+               
+                try (PreparedStatement psCmd = con.prepareStatement(sqlGetCommande)) {
+                    psCmd.setInt(1, idCommande);
+                    ResultSet rs = psCmd.executeQuery();
+
+                    if (!rs.next()) {
+                        throw new ReceptionCommandeImpossibleException(
+                            "Commande introuvable (id=" + idCommande + ")"
+                        );
+                    }
+
+                    nomMedicament = rs.getString("nom_medicamment");
+                    quantite = rs.getInt("quantite");
+                    etat = rs.getString("etat");
+                }
+
+                
+                if ("ANNULEE".equalsIgnoreCase(etat)) {
+                    throw new ReceptionCommandeImpossibleException(
+                        "Réception impossible : la commande est annulée."
+                    );
+                }
+
+                if ("RECUE".equalsIgnoreCase(etat)) {
+                    throw new ReceptionCommandeImpossibleException(
+                        "Réception impossible : la commande est déjà reçue."
+                    );
+                }
+
+               
+                try (PreparedStatement psStock = con.prepareStatement(sqlUpdateStock)) {
+                    psStock.setInt(1, quantite);
+                    psStock.setString(2, nomMedicament);
+                    psStock.executeUpdate(); 
+                }
+
+               
+                try (PreparedStatement psEtat = con.prepareStatement(sqlUpdateEtat)) {
+                    psEtat.setInt(1, idCommande);
+                    psEtat.executeUpdate();
+                }
+
+                con.commit();
+                System.out.println("Commande reçue. Stock mis à jour si le produit existe.");
+
+            } catch (Exception e) {
+                con.rollback(); 
+                throw e;
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
 }
