@@ -1,0 +1,217 @@
+package ui.view;
+
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
+
+import java.sql.SQLException;
+
+import dao.ClientDAO;
+import exception.ClientNotFoundException;
+import model.Client;
+
+public class ClientView {
+
+    private final ClientDAO dao = new ClientDAO();
+    private final TableView<Client> table = new TableView<>();
+
+    public void start(Stage stage) {
+
+       
+        Label title = new Label("Gestion des Clients");
+        title.getStyleClass().add("title");
+
+        
+        TextField txtSearch = new TextField();
+        txtSearch.setPromptText("Rechercher...");
+
+        Button btnSearch = new Button("Rechercher");
+        Button btnRefresh = new Button("Actualiser");
+
+        HBox searchBox = new HBox(10, txtSearch, btnSearch, btnRefresh);
+        searchBox.setAlignment(Pos.CENTER);
+
+        
+        TableColumn<Client, Integer> colId = new TableColumn<>("ID");
+        colId.setCellValueFactory(new PropertyValueFactory<>("idClient"));
+        colId.setPrefWidth(80);
+
+        TableColumn<Client, String> colNom = new TableColumn<>("Nom");
+        colNom.setCellValueFactory(new PropertyValueFactory<>("nom"));
+        colNom.setPrefWidth(200);
+
+        TableColumn<Client, String> colTel = new TableColumn<>("Téléphone");
+        colTel.setCellValueFactory(new PropertyValueFactory<>("telephone"));
+        colTel.setPrefWidth(200);
+
+        TableColumn<Client, String> colCin = new TableColumn<>("CIN");
+        colCin.setCellValueFactory(new PropertyValueFactory<>("cin"));
+        colCin.setPrefWidth(150);
+
+        table.getColumns().addAll(colId, colNom, colTel, colCin);
+        table.setItems(dao.getAll());
+
+        
+        TextField txtNom = new TextField();
+        txtNom.setPromptText("Nom");
+
+        TextField txtTel = new TextField();
+        txtTel.setPromptText("Téléphone");
+
+        TextField txtCin = new TextField();
+        txtCin.setPromptText("CIN");
+
+        HBox formBox = new HBox(15, txtNom, txtTel, txtCin);
+        formBox.setAlignment(Pos.CENTER);
+
+        
+        Button btnAdd = new Button("Ajouter");
+        Button btnUpdate = new Button("Modifier");
+        Button btnDelete = new Button("Supprimer");
+
+        HBox crudBox = new HBox(20, btnAdd, btnUpdate, btnDelete);
+        crudBox.setAlignment(Pos.CENTER);
+
+        Button btnRetour = new Button("Retour");
+        btnRetour.setMaxWidth(Double.MAX_VALUE);
+
+        
+        btnSearch.setOnAction(e -> {
+
+            if (txtSearch.getText().isEmpty()) {
+                table.setItems(dao.getAll());
+                return;
+            }
+
+            try {
+                table.setItems(dao.chercher(txtSearch.getText()));
+            } catch (ClientNotFoundException ex) {
+                table.getItems().clear();
+                show(ex.getMessage());
+            }
+        });
+
+
+        btnRefresh.setOnAction(e -> {
+            txtSearch.clear();
+            table.setItems(dao.getAll());
+        });
+
+        btnAdd.setOnAction(e -> {
+            if (txtNom.getText().isEmpty()) {
+                show("Veuillez saisir le nom");
+                return;
+            }
+            dao.ajouter(txtNom.getText(), txtTel.getText(), txtCin.getText());
+            table.setItems(dao.getAll());
+            clear(txtNom, txtTel, txtCin);
+        });
+
+        btnUpdate.setOnAction(e -> {
+
+            Client c = table.getSelectionModel().getSelectedItem();
+
+            if (c == null) {
+                show("Veuillez sélectionner un client à modifier");
+                return;
+            }
+
+            if (txtNom.getText().isEmpty()) {
+                show("Le nom ne peut pas être vide");
+                return;
+            }
+
+            dao.modifier(
+                    c.getIdClient(),
+                    txtNom.getText(),
+                    txtTel.getText(),
+                    txtCin.getText()
+            );
+
+            table.setItems(dao.getAll());
+            show("Client modifié avec succès");
+        });
+
+
+
+        btnDelete.setOnAction(e -> {
+
+            Client c = table.getSelectionModel().getSelectedItem();
+
+            if (c == null) {
+                show("Veuillez sélectionner un client");
+                return;
+            }
+
+            Alert confirm = new Alert(
+                    Alert.AlertType.CONFIRMATION,
+                    "Voulez-vous vraiment supprimer ce client ?",
+                    ButtonType.YES,
+                    ButtonType.NO
+            );
+
+            confirm.showAndWait();
+
+            if (confirm.getResult() == ButtonType.YES) {
+                try {
+                    dao.supprimer(c.getIdClient());
+                    table.setItems(dao.getAll());
+                    clear(txtNom, txtTel, txtCin);
+                } catch (SQLException ex) {
+                    show("Impossible de supprimer ce client ");
+                }
+            }
+        });
+
+
+        table.setOnMouseClicked(e -> {
+            Client c = table.getSelectionModel().getSelectedItem();
+            if (c != null) {
+                txtNom.setText(c.getNom());
+                txtTel.setText(c.getTelephone());
+                txtCin.setText(c.getCin());
+            }
+        });
+
+        btnRetour.setOnAction(e ->
+                new DonneesView().start(stage)
+        );
+
+        /* ROOT */
+        VBox root = new VBox(
+                20,
+                title,
+                searchBox,
+                table,
+                formBox,
+                crudBox,
+                btnRetour
+        );
+
+        root.setPadding(new Insets(20));
+        root.getStyleClass().add("container");
+
+        Scene scene = new Scene(root, 850, 600);
+        scene.getStylesheets().add("/css/style.css");
+
+        stage.setScene(scene);
+        stage.setTitle("Clients");
+        stage.show();
+    }
+
+    private void clear(TextField... f) {
+        for (TextField t : f) t.clear();
+    }
+
+    private void show(String msg) {
+        Alert a = new Alert(Alert.AlertType.INFORMATION);
+        a.setHeaderText(null);
+        a.setContentText(msg);
+        a.show();
+    }
+}
