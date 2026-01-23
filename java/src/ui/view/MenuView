@@ -43,10 +43,16 @@ public class MenuView {
         btnLogout.setOnAction(e ->
                 new LoginView().start(stage)
         );
+        Button btnDonnees = new Button("Données");
 
         if (!Session.isAdmin()) {
             btnRapports.setVisible(false);
+            btnDonnees.setVisible(false);
         }
+        btnDonnees.setOnAction(e -> {
+            new DonneesView().start(new Stage());
+        });
+
 
         VBox root = new VBox(
                 15,
@@ -55,6 +61,7 @@ public class MenuView {
                 btnProduits,
                 btnFournisseurs,
                 btnVentes,
+                btnDonnees,
                 btnRapports,
                 btnLogout
         );
