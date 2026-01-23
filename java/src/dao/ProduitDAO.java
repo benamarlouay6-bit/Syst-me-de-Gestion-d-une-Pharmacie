@@ -1,7 +1,6 @@
 package dao;
 
 import model.Produit;
-import ui.utils.*;
 import exception.ProduitNotFoundException;
 
 import java.sql.*;
