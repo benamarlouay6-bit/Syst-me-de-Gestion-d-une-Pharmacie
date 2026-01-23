@@ -244,3 +244,63 @@ ORDER BY v.dateVente DESC;
 SELECT v.idVente, v.dateVente, v.quantite, v.montantTotal, 
 v.nom_medicamment, c.cin 
 FROM vente v JOIN client c ON v.idClient = c.idClient;
+
+SELECT * FROM employe;
+INSERT INTO employe(nom, telephone) VALUES(?, ?);
+UPDATE employe SET nom=?, telephone=? WHERE idEmploye=?;
+DELETE FROM employe WHERE idEmploye=?;
+SELECT * FROM employe WHERE nom LIKE ? OR telephone LIKE ?;
+
+SELECT * FROM client;
+INSERT INTO client(nom, telephone, cin) VALUES(?, ?, ?);
+UPDATE client SET nom=?, telephone=?, cin=? WHERE idClient=?;
+DELETE FROM client WHERE idClient=?;
+SELECT * FROM client
+WHERE nom LIKE ? OR telephone LIKE ? OR cin LIKE ?;
+
+UPDATE fournisseur SET nom=?, telephone=?, mail=? WHERE id=?;
+DELETE FROM fournisseur WHERE id=?;
+
+SELECT * FROM fournisseur;
+INSERT INTO fournisseur(nom, telephone, mail) VALUES(?, ?, ?);
+UPDATE fournisseur SET nom=?, telephone=?, mail=? WHERE id=?;
+DELETE FROM fournisseur WHERE id=?;
+
+
+SELECT * FROM administrateur WHERE idAdministrateur=?;
+SELECT * FROM administrateur WHERE nom=?;
+SELECT * FROM administrateur WHERE login=? AND password=?;
+
+SELECT * FROM employe WHERE login=? ;
+SELECT * FROM administrateur WHERE login=? ;
+
+
+INSERT INTO administrateur (nom, login)
+VALUES 
+('eya abbes', 'admin'),
+('fatma Jallouli', 'resp' );
+
+
+SELECT * FROM administrateur WHERE nom=? AND login=?;
+
+SELECT * FROM employe WHERE LOWER(nom) = LOWER(?);
+
+
+SELECT DATABASE();
+USE pharma;
+SELECT * FROM administrateur;
+
+SELECT idProduit, prixF, prixC, quantiteStock, seuilAlerte
+FROM produit
+WHERE nom = ?;
+
+
+SELECT prixC, quantiteStock, seuilAlerte 
+FROM produit WHERE nom = ?;
+
+
+SELECT idClient FROM client WHERE idClient = ?;
+
+INSERT INTO vente (dateVente, quantite, montantTotal, nom_medicamment, idClient) 
+VALUES (?, ?, ?, ?, ?);
+UPDATE produit SET quantiteStock = quantiteStock - ? WHERE nom = ?;
