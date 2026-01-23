@@ -1,0 +1,44 @@
+package model;
+
+import dao.AdministrateurDAO;
+import dao.EmployeDAO;
+import model.Administrateur;
+import model.Employe;
+import ui.utils.Session;
+
+public class AuthService {
+
+    private static final String ADMIN_CODE = "eyafatma1";
+    private static final String EMPLOYE_CODE = "eyaeya2";
+
+    private AdministrateurDAO adminDAO = new AdministrateurDAO();
+    private EmployeDAO employeDAO = new EmployeDAO();
+
+    public boolean login(String nom, String login, String password) {
+
+        nom = nom.trim();
+        login = login.trim();
+        password = password.trim();
+
+        
+        Administrateur admin = adminDAO.findByLoginAndNom(login, nom);
+
+        if (admin != null && "eyafatma1".equals(password)) {
+            Session.setSession("ADMIN", admin.getNom());
+            return true;
+        }
+
+        
+        Employe emp = employeDAO.findByNom(nom);
+
+        if (emp != null) {
+            if ("eyaeya2".equals(password)) {
+                Session.setSession("EMPLOYE", emp.getNom());
+                return true;
+            }}
+            return false;
+        
+
+
+    }
+}
