@@ -1,49 +1,180 @@
 package ui.view;
 
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
+import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import dao.FournisseurDAO;
+import model.Fournisseur;
 
 public class FournisseurView {
 
+    private TableView<Fournisseur> table = new TableView<>();
+    private FournisseurDAO dao = new FournisseurDAO();
+
     public void start(Stage stage) {
 
-        Label title = new Label("Fournisseurs");
+        
+        Label title = new Label("Liste des Fournisseurs");
         title.getStyleClass().add("title");
 
-        Button btnListe = new Button("Liste Fournisseurs");
-        Button btnCommandes = new Button("Commandes Fournisseur");
+        
+        TableColumn<Fournisseur, Integer> colId = new TableColumn<>("ID");
+        colId.setCellValueFactory(new PropertyValueFactory<>("id"));
+        colId.setPrefWidth(80);
+
+        TableColumn<Fournisseur, String> colNom = new TableColumn<>("Nom");
+        colNom.setCellValueFactory(new PropertyValueFactory<>("nom"));
+        colNom.setPrefWidth(200);
+
+        TableColumn<Fournisseur, String> colTel = new TableColumn<>("Téléphone");
+        colTel.setCellValueFactory(new PropertyValueFactory<>("telephone"));
+        colTel.setPrefWidth(200);
+
+        TableColumn<Fournisseur, String> colMail = new TableColumn<>("Email");
+        colMail.setCellValueFactory(new PropertyValueFactory<>("mail"));
+        colMail.setPrefWidth(250);
+
+        table.getColumns().addAll(colId, colNom, colTel, colMail);
+        table.setItems(dao.getAll());
+        table.setPrefHeight(300);
+
+        
+        TextField txtNom = new TextField();
+        txtNom.setPromptText("Nom");
+
+        TextField txtTel = new TextField();
+        txtTel.setPromptText("Téléphone");
+
+        TextField txtMail = new TextField();
+        txtMail.setPromptText("Email");
+
+        HBox formBox = new HBox(15, txtNom, txtTel, txtMail);
+        formBox.setAlignment(Pos.CENTER);
+
+       
+        Button btnAjouter = new Button("Ajouter Fournisseur");
+        Button btnModifier = new Button("Modifier Fournisseur");
+        Button btnSupprimer = new Button("Supprimer Fournisseur");
         Button btnRetour = new Button("Retour");
 
-        btnListe.setOnAction(e ->
-                new ListeFournisseurView().start(stage)
-        );
+        HBox crudBox = new HBox(20, btnAjouter, btnModifier, btnSupprimer);
+        crudBox.setAlignment(Pos.CENTER);
 
-        btnCommandes.setOnAction(e ->
-                new CommandeFournisseurView().start(stage)
-        );
+       
+        table.setOnMouseClicked(e -> {
+            Fournisseur f = table.getSelectionModel().getSelectedItem();
+            if (f != null) {
+                txtNom.setText(f.getNom());
+                txtTel.setText(f.getTelephone());
+                txtMail.setText(f.getMail());
+            }
+        });
 
+        
+        btnAjouter.setOnAction(e -> {
+            if (txtNom.getText().isEmpty()
+                    || txtTel.getText().isEmpty()
+                    || txtMail.getText().isEmpty()) {
+                show("Tous les champs sont obligatoires");
+                return;
+            }
+            Fournisseur f=new Fournisseur(txtNom.getText(),
+                    txtTel.getText(),
+                    txtMail.getText());
+            dao.ajouter(f);
+
+            table.setItems(dao.getAll());
+            clear(txtNom, txtTel, txtMail);
+        });
+
+        
+        btnModifier.setOnAction(e -> {
+
+            Fournisseur f = table.getSelectionModel().getSelectedItem();
+
+            if (f == null) {
+                show("Veuillez sélectionner un fournisseur");
+                return;
+            }
+
+            dao.modifier(
+                    f.getId(),
+                    txtNom.getText(),
+                    txtTel.getText(),
+                    txtMail.getText()
+            );
+
+            table.setItems(dao.getAll());
+            show("Fournisseur modifié avec succès");
+        });
+
+     
+        btnSupprimer.setOnAction(e -> {
+
+            Fournisseur f = table.getSelectionModel().getSelectedItem();
+
+            if (f == null) {
+                show("Veuillez sélectionner un fournisseur");
+                return;
+            }
+
+            Alert confirm = new Alert(
+                    Alert.AlertType.CONFIRMATION,
+                    "Voulez-vous supprimer ce fournisseur ?",
+                    ButtonType.YES,
+                    ButtonType.NO
+            );
+
+            confirm.showAndWait();
+
+            if (confirm.getResult() == ButtonType.YES) {
+                dao.supprimer(f.getId());
+                table.setItems(dao.getAll());
+                clear(txtNom, txtTel, txtMail);
+            }
+        });
+
+        
         btnRetour.setOnAction(e ->
                 new MenuView().start(stage)
         );
 
+        
         VBox root = new VBox(
                 20,
                 title,
-                btnListe,
-                btnCommandes,
+                table,
+                formBox,
+                crudBox,
                 btnRetour
         );
 
+        root.setPadding(new Insets(20));
+        root.setAlignment(Pos.CENTER);
         root.getStyleClass().add("container");
 
-        Scene scene = new Scene(root, 400, 350);
+        Scene scene = new Scene(root, 900, 600);
         scene.getStylesheets().add("/css/style.css");
 
         stage.setScene(scene);
         stage.setTitle("Fournisseurs");
         stage.show();
+    }
+
+    
+    private void clear(TextField... fields) {
+        for (TextField f : fields) f.clear();
+    }
+
+    private void show(String msg) {
+        Alert a = new Alert(Alert.AlertType.INFORMATION);
+        a.setHeaderText(null);
+        a.setContentText(msg);
+        a.show();
     }
 }
