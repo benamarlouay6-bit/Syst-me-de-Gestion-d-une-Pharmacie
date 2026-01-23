@@ -1,0 +1,174 @@
+package ui.view;
+
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
+import dao.EmployeDAO;
+import exception.EmployeNotFoundException;
+import model.Employe;
+
+public class EmployeView {
+
+    private final EmployeDAO dao = new EmployeDAO();
+    private final TableView<Employe> table = new TableView<>();
+
+    public void start(Stage stage) {
+
+        
+        Label title = new Label("Gestion des Employés");
+        title.getStyleClass().add("title");
+
+        
+        TextField txtSearch = new TextField();
+        txtSearch.setPromptText("Rechercher...");
+
+        Button btnSearch = new Button("Rechercher");
+        Button btnRefresh = new Button("Actualiser");
+
+        HBox searchBox = new HBox(10, txtSearch, btnSearch, btnRefresh);
+        searchBox.setAlignment(Pos.CENTER);
+
+        
+        TableColumn<Employe, Integer> colId = new TableColumn<>("ID");
+        colId.setCellValueFactory(new PropertyValueFactory<>("idEmploye"));
+        colId.setPrefWidth(100);
+
+        TableColumn<Employe, String> colNom = new TableColumn<>("Nom");
+        colNom.setCellValueFactory(new PropertyValueFactory<>("nom"));
+        colNom.setPrefWidth(250);
+
+        TableColumn<Employe, String> colTel = new TableColumn<>("Téléphone");
+        colTel.setCellValueFactory(new PropertyValueFactory<>("telephone"));
+        colTel.setPrefWidth(250);
+
+        table.getColumns().addAll(colId, colNom, colTel);
+        table.setItems(dao.getAll());
+        table.setPrefHeight(300);
+
+        
+        TextField txtNom = new TextField();
+        txtNom.setPromptText("Nom");
+
+        TextField txtTel = new TextField();
+        txtTel.setPromptText("Téléphone");
+
+        HBox formBox = new HBox(15, txtNom, txtTel);
+        formBox.setAlignment(Pos.CENTER);
+
+       
+        Button btnAdd = new Button("Ajouter");
+        Button btnUpdate = new Button("Modifier");
+        Button btnDelete = new Button("Supprimer");
+
+        HBox crudBox = new HBox(20, btnAdd, btnUpdate, btnDelete);
+        crudBox.setAlignment(Pos.CENTER);
+
+       
+        Button btnRetour = new Button("Retour");
+        btnRetour.setMaxWidth(Double.MAX_VALUE);
+
+
+        // Rechercher
+        btnSearch.setOnAction(e -> {
+            try {
+                table.setItems(dao.chercher(txtSearch.getText()));
+            } catch (EmployeNotFoundException ex) {
+                table.getItems().clear();
+                showAlert(ex.getMessage());
+            }
+        });
+
+        // Actualiser
+        btnRefresh.setOnAction(e -> {
+            txtSearch.clear();
+            table.setItems(dao.getAll());
+        });
+
+        // Ajouter
+        btnAdd.setOnAction(e -> {
+            if (txtNom.getText().isEmpty() || txtTel.getText().isEmpty()) {
+                showAlert("Veuillez remplir tous les champs");
+                return;
+            }
+            dao.ajouter(txtNom.getText(), txtTel.getText());
+            table.setItems(dao.getAll());
+            clear(txtNom, txtTel);
+        });
+
+        // Modifier
+        btnUpdate.setOnAction(e -> {
+            Employe emp = table.getSelectionModel().getSelectedItem();
+            if (emp == null) {
+                showAlert("Veuillez sélectionner un employé");
+                return;
+            }
+            dao.modifier(emp.getIdEmploye(), txtNom.getText(), txtTel.getText());
+            table.setItems(dao.getAll());
+        });
+
+        // Supprimer
+        btnDelete.setOnAction(e -> {
+            Employe emp = table.getSelectionModel().getSelectedItem();
+            if (emp == null) {
+                showAlert("Veuillez sélectionner un employé");
+                return;
+            }
+            dao.supprimer(emp.getIdEmploye());
+            table.setItems(dao.getAll());
+            clear(txtNom, txtTel);
+        });
+
+        // Click table
+        table.setOnMouseClicked(e -> {
+            Employe emp = table.getSelectionModel().getSelectedItem();
+            if (emp != null) {
+                txtNom.setText(emp.getNom());
+                txtTel.setText(emp.getTelephone());
+            }
+        });
+
+        // Retour
+        btnRetour.setOnAction(e ->
+                new DonneesView().start(stage)
+        );
+
+       
+        VBox root = new VBox(
+                20,
+                title,
+                searchBox,
+               table,
+                formBox,
+                crudBox,
+                btnRetour
+        );
+
+        root.setPadding(new Insets(20));
+        root.getStyleClass().add("container");
+
+        Scene scene = new Scene(root, 800, 600);
+        scene.getStylesheets().add("/css/style.css");
+
+        stage.setScene(scene);
+        stage.setTitle("Employés");
+        stage.show();
+    }
+
+   
+    private void clear(TextField n, TextField t) {
+        n.clear();
+        t.clear();
+    }
+
+    private void showAlert(String msg) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setHeaderText(null);
+        alert.setContentText(msg);
+        alert.show();
+    }
+}
