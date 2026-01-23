@@ -25,7 +25,6 @@ public class ProductView {
     public void start(Stage stage) {
 
         Label title = new Label("Gestion des Produits");
-        title.getStyleClass().add("title");
 
         TextField txtSearch = new TextField();
         txtSearch.setPromptText("Nom du produit");
@@ -55,11 +54,13 @@ public class ProductView {
         Button btnEdit = new Button("Modifier");
         Button btnDelete = new Button("Supprimer");
         Button btnBack = new Button("Retour");
+        
 
         HBox actions = new HBox(15, btnAdd, btnEdit, btnDelete);
         actions.setAlignment(Pos.CENTER);
 
-        VBox root = new VBox(20,
+        VBox root = new VBox(
+                20,
                 title,
                 searchBox,
                 table,
@@ -67,11 +68,14 @@ public class ProductView {
                 btnBack
         );
 
-        root.setAlignment(Pos.CENTER);
-        root.getStyleClass().add("container");
-
         Scene scene = new Scene(root, 800, 500);
         scene.getStylesheets().add("/css/style.css");
+        btnAdd.getStyleClass().add("btn-primary");
+        btnEdit.getStyleClass().add("btn-warning");
+        btnDelete.getStyleClass().add("btn-danger");
+        btnBack.getStyleClass().add("btn-secondary");
+        btnSearch.getStyleClass().add("btn-primary");
+        btnRefresh.getStyleClass().add("btn-secondary");
 
         stage.setScene(scene);
         stage.setTitle("Produits");
@@ -79,7 +83,6 @@ public class ProductView {
 
         loadAllProduits();
 
-        // ACTIONS
         btnRefresh.setOnAction(e -> loadAllProduits());
 
         btnSearch.setOnAction(e -> {
@@ -94,11 +97,8 @@ public class ProductView {
         });
 
         btnAdd.setOnAction(e -> showAddDialog());
-
         btnEdit.setOnAction(e -> showEditDialog());
-
         btnDelete.setOnAction(e -> deleteProduit());
-
         btnBack.setOnAction(e -> new MenuView().start(stage));
     }
 
@@ -120,7 +120,8 @@ public class ProductView {
         TextField qte = new TextField();
         TextField seuil = new TextField();
 
-        VBox box = new VBox(10,
+        VBox box = new VBox(
+                10,
                 new Label("Nom"), nom,
                 new Label("Prix Fournisseur"), prixF,
                 new Label("Prix Client"), prixC,
@@ -148,7 +149,15 @@ public class ProductView {
             try {
                 produitDAO.ajouterProduit(p);
                 loadAllProduits();
-                showAlert(Alert.AlertType.INFORMATION, "Produit ajouté");
+
+                if (p.estInferieurAuSeuil()) {
+                    Alert a = new Alert(Alert.AlertType.WARNING);
+                    a.setContentText("Stock bas dès l’ajout pour : " + p.getNom());
+                    a.show();
+                } else {
+                    showAlert(Alert.AlertType.INFORMATION, "Produit ajouté");
+                }
+
             } catch (Exception ex) {
                 showAlert(Alert.AlertType.ERROR, "Erreur ajout produit");
             }
@@ -157,7 +166,6 @@ public class ProductView {
 
     private void showEditDialog() {
         Produit selected = table.getSelectionModel().getSelectedItem();
-
         if (selected == null) {
             showAlert(Alert.AlertType.WARNING, "Sélectionnez un produit");
             return;
@@ -172,7 +180,8 @@ public class ProductView {
         TextField qte = new TextField(String.valueOf(selected.getQuantiteStock()));
         TextField seuil = new TextField(String.valueOf(selected.getSeuilAlerte()));
 
-        VBox box = new VBox(10,
+        VBox box = new VBox(
+                10,
                 new Label("Nom"), nom,
                 new Label("Prix Fournisseur"), prixF,
                 new Label("Prix Client"), prixC,
@@ -199,7 +208,15 @@ public class ProductView {
             try {
                 produitDAO.modifierProduit(p);
                 loadAllProduits();
-                showAlert(Alert.AlertType.INFORMATION, "Produit modifié");
+
+                if (p.estInferieurAuSeuil()) {
+                    Alert a = new Alert(Alert.AlertType.WARNING);
+                    a.setContentText("Stock bas après modification pour : " + p.getNom());
+                    a.show();
+                } else {
+                    showAlert(Alert.AlertType.INFORMATION, "Produit modifié");
+                }
+
             } catch (Exception e) {
                 showAlert(Alert.AlertType.ERROR, "Erreur modification");
             }
@@ -208,14 +225,12 @@ public class ProductView {
 
     private void deleteProduit() {
         Produit selected = table.getSelectionModel().getSelectedItem();
-
         if (selected == null) {
             showAlert(Alert.AlertType.WARNING, "Sélectionnez un produit");
             return;
         }
 
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
-        confirm.setHeaderText("Supprimer produit ?");
         confirm.setContentText("Confirmer la suppression");
 
         confirm.showAndWait().ifPresent(btn -> {
