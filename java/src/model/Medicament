@@ -5,7 +5,7 @@ public class Medicament {
     private int idMedicament;
     private String nom;
     private double prixAchat;
-
+    public Medicament() {};
     public Medicament(int idMedicament, String nom, double prixAchat) {
         this.idMedicament = idMedicament;
         this.nom = nom;
