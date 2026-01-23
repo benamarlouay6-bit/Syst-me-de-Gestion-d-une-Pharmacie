@@ -4,72 +4,70 @@ import dao.VenteDAO;
 import exception.StockInsuffisantException;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import model.Vente;
+import model.Produit;
 
 import java.sql.Date;
 import java.time.LocalDate;
 
 public class SaleView {
 
-    private final VenteDAO dao = new VenteDAO();
-
     public void start(Stage stage) {
 
         Label title = new Label("Vente Client");
-        title.getStyleClass().add("title");
 
         TextField txtMedicament = new TextField();
-        txtMedicament.setPromptText("nom medicament");
+        txtMedicament.setPromptText("Nom médicament");
+
         TextField txtQuantite = new TextField();
-        txtQuantite.setPromptText("quantite vendue");
+        txtQuantite.setPromptText("Quantité vendue");
+
         TextField txtIdClient = new TextField();
-        txtIdClient.setPromptText("CIN du client");
-        GridPane form = new GridPane();
-        form.setHgap(15);
-        form.setVgap(15);
-
-        form.add(new Label("Nom du médicament"), 0, 0);
-        form.add(txtMedicament, 1, 0);
-
-        form.add(new Label("Quantité à vendre"), 0, 1);
-        form.add(txtQuantite, 1, 1);
-
-        form.add(new Label("CIN"), 0, 2);
-        form.add(txtIdClient, 1, 2);
+        txtIdClient.setPromptText("ID client");
 
         Button btnVendre = new Button("Vendre");
-        Button btnRetour = new Button("Retour");
         Button btnListe = new Button("Liste des ventes");
-        GridPane grid = new GridPane();
-        grid.setVgap(10);
-        grid.setHgap(10);
-
-        grid.addRow(0, new Label("Nom Médicament"), txtMedicament);
-        grid.addRow(1, new Label("Quantité"), txtQuantite);
-        grid.addRow(2, new Label("CIN Client"), txtIdClient);
-        btnListe.setOnAction(e ->
-        new ListeVenteView().start(stage)
-);
+        Button btnRetour = new Button("Retour");
 
         btnVendre.setOnAction(e -> {
-            new VenteDAO().enregistrerVente(
-                    Date.valueOf(LocalDate.now()),
-                    txtMedicament.getText(),
-                    Integer.parseInt(txtQuantite.getText()),
-                    txtIdClient.getText()
-            );
+            try {
+                VenteDAO dao = new VenteDAO();
 
-            new ListeVenteView().start(stage);
+                Produit produit = dao.enregistrerVente(
+                        Date.valueOf(LocalDate.now()),
+                        txtMedicament.getText(),
+                        Integer.parseInt(txtQuantite.getText()),
+                        Integer.parseInt(txtIdClient.getText())
+                );
+
+                if (produit.getQuantiteStock() < produit.getSeuilAlerte()) {
+                    Alert a = new Alert(Alert.AlertType.WARNING);
+                    a.setHeaderText(null);
+                    a.setContentText(
+                            "Attention : stock inférieur au seuil pour " +
+                            produit.getNom()
+                    );
+                    a.show();
+                }
+
+                new ListeVenteView().start(stage);
+
+            } catch (StockInsuffisantException ex) {
+                Alert a = new Alert(Alert.AlertType.ERROR);
+                a.setContentText(ex.getMessage());
+                a.show();
+
+            } catch (Exception ex) {
+                Alert a = new Alert(Alert.AlertType.ERROR);
+                a.setContentText(ex.getMessage());
+                a.show();
+            }
         });
 
-
-       
-
+        btnListe.setOnAction(e -> new ListeVenteView().start(stage));
         btnRetour.setOnAction(e -> new MenuView().start(stage));
-        
+
         VBox root = new VBox(
                 15,
                 title,
@@ -81,13 +79,9 @@ public class SaleView {
                 btnRetour
         );
 
-        root.getStyleClass().add("container");
-
         Scene scene = new Scene(root, 420, 380);
-        scene.getStylesheets().add("/css/style.css");
-
-        stage.setTitle("Ventes");
         stage.setScene(scene);
+        stage.setTitle("Ventes");
         stage.show();
     }
 }
